@@ -16,8 +16,9 @@ module.exports = {
                     'dark-bg': '#0B1120', // Deep dark blue/slate
                     'dark-card': '#1E293B', // Slate 800
                     'dark-subtext': '#94A3B8', // Slate 400
-                    atom: '#2E3148', // Placeholder for ATOM
-                    one: '#00E091', // Placeholder for ONE
+                    atom: '#EF4444', // Red for ATOM
+                    one: '#3B82F6', // Blue for ATOM ONE
+                    mixed: '#A855F7', // Purple for MIXED
                 }
             },
             animation: {

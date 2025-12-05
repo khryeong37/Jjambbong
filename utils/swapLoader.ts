@@ -135,8 +135,13 @@ export const loadSwapNodes = async (dateRange?: { start: string; end: string }):
     const netBuyRatio = (a.buyVolume - a.sellVolume) / netBuyRatioDenom;
     const atomShare = a.totalVolume ? a.atomVolume / a.totalVolume : 0;
     const oneShare = a.totalVolume ? a.oneVolume / a.totalVolume : 0;
+    // ATOM: atomShare가 oneShare보다 크고 0.5 이상
+    // ATOMONE: oneShare가 atomShare보다 크고 0.5 이상
+    // MIXED: 그 외
     const bias =
-      atomShare > 0.65 ? 'ATOM' : oneShare > 0.65 ? 'ATOMONE' : 'MIXED';
+      atomShare > oneShare && atomShare >= 0.5 ? 'ATOM' 
+      : oneShare > atomShare && oneShare >= 0.5 ? 'ATOMONE' 
+      : 'MIXED';
 
     const scaleScore = Math.min(100, (a.totalVolume / maxVol) * 100);
     const timingScore = 50 + netBuyRatio * 40;
