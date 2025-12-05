@@ -11,6 +11,7 @@ interface GelSliderProps {
 const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual = false }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<'min' | 'max' | 'single' | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
   const getPercentage = useCallback((val: number) => ((val - min) / (max - min)) * 100, [min, max]);
 
@@ -56,6 +57,22 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dragging]);
 
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark') || 
+                window.matchMedia('(prefers-color-scheme: dark)').matches);
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', checkDarkMode);
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', checkDarkMode);
+    };
+  }, []);
+
   const rangeStart = isDual && Array.isArray(value) ? getPercentage(value[0]) : 0;
   const rangeEnd = isDual && Array.isArray(value) ? getPercentage(value[1]) : getPercentage(value as number);
 
@@ -70,7 +87,7 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
 
   const sliderBaseStyle: React.CSSProperties = {
     position: 'relative',
-    height: '0.8em',
+    height: '0.5em',
     margin: '0',
     background: 'transparent',
   };
@@ -114,7 +131,12 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     cursor: 'pointer', zIndex: 10,
   };
 
-  const nubStyle: React.CSSProperties = {
+  const nubStyle: React.CSSProperties = isDark ? {
+    width: '100%', height: '100%', borderRadius: '50%',
+    backgroundImage: 'linear-gradient(to bottom, oklch(0.85 0.01 40), oklch(0.7 0.005 40))',
+    boxShadow: 'inset 0 0 1em oklch(0.7 0.01 212), inset 0 0 0.2em oklch(0.7 0.01 212), oklch(0.7 0.01 212 / 0.3) 0px 0.15em 0.2em -0.5px, oklch(0.7 0.01 212 / 0.2) 0px 0.08em 0.15em -0.5px',
+    border: 'solid 0.15em oklch(0.75 0.005 212)',
+  } : {
     width: '100%', height: '100%', borderRadius: '50%',
     backgroundImage: 'linear-gradient(to bottom, oklch(0.3 0.01 40), oklch(0.6 0.005 40))',
     boxShadow: 'inset 0 0 1em oklch(0.3 0.01 212), inset 0 0 0.2em oklch(0.3 0.01 212), oklch(0.3 0.01 212 / 0.2) 0px 0.15em 0.2em -0.5px, oklch(0.3 0.01 212 / 0.12) 0px 0.08em 0.15em -0.5px',

@@ -6,4 +6,37 @@
   body {
     @apply antialiased;
   }
+  
+  input[type="date"] {
+    color-scheme: light;
+  }
+  
+  .dark input[type="date"] {
+    color-scheme: dark;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0);
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 2px;
+    margin-left: 4px;
+  }
+  
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+    cursor: pointer;
+    padding: 2px;
+    margin-left: 4px;
+  }
+  
+  input[type="date"].date-input-no-icon::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+  
+  input[type="date"].date-input-no-icon {
+    cursor: pointer;
+  }
 }

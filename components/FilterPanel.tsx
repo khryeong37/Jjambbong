@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FilterState } from '../types';
 import { ChevronDown, ChevronUp, Zap, Calendar, RefreshCcw, SlidersHorizontal, BarChart2, Share2, Activity, Target, DollarSign } from 'lucide-react';
 import GelSlider from './GelSlider';
@@ -22,7 +22,7 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
       >
         <div className="flex items-center gap-3">
           <Icon size={14} className="text-gray-400 dark:text-gray-300 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
-          <span className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-300 uppercase group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors">{title}</span>
+          <span className="text-xs font-bold tracking-wider text-gray-800 dark:text-gray-200 uppercase group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{title}</span>
         </div>
         {open ? <ChevronUp size={14} className="text-gray-300 dark:text-gray-400 group-hover:text-gray-500" /> : <ChevronDown size={14} className="text-gray-300 dark:text-gray-400 group-hover:text-gray-500" />}
       </button>
@@ -32,6 +32,8 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
 };
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, applyFilters, resetFilters, initialFilters }) => {
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
 
   const setDatePreset = (days: number) => {
       const end = new Date();
@@ -46,6 +48,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
       }));
   };
 
+  const handleDateClick = (ref: React.RefObject<HTMLInputElement>) => {
+    if (ref.current && 'showPicker' in ref.current) {
+      (ref.current as HTMLInputElement).showPicker();
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 overflow-hidden">
       {/* Header */}
@@ -56,10 +64,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
           </div>
           <div>
             <h1 className="font-bold text-gray-900 dark:text-aether-dark-text leading-none text-sm">AETHER</h1>
-            <p className="text-[9px] font-bold text-gray-400 dark:text-aether-dark-subtext tracking-[0.2em] mt-1">ANALYTICS</p>
+            <p className="text-[9px] font-bold text-gray-700 dark:text-aether-dark-subtext tracking-[0.2em] mt-1">ANALYTICS</p>
           </div>
         </div>
-        <button onClick={resetFilters} className="text-[9px] font-bold text-gray-400 dark:text-aether-dark-subtext hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
+        <button onClick={resetFilters} className="text-[9px] font-bold text-gray-700 dark:text-aether-dark-subtext hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
           <RefreshCcw size={10} /> RESET
         </button>
       </div>
@@ -71,66 +79,94 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
         <div className="bg-gray-50/50 dark:bg-white/5 rounded-2xl p-4 mb-4 border border-gray-100/50 dark:border-white/5">
            <div className="flex items-center gap-2 text-indigo-500 dark:text-indigo-400 mb-3">
              <div className="p-1.5 bg-white dark:bg-aether-dark-card rounded-lg shadow-sm"><Calendar size={12} /></div>
-            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">Time Period</span>
+            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-800 dark:text-gray-200">Time Period</span>
            </div>
-           <div className="flex gap-2 text-[11px] text-gray-500 dark:text-gray-300 font-medium bg-white dark:bg-aether-dark-bg border border-gray-100 dark:border-white/10 p-3 rounded-xl items-center justify-between shadow-sm mb-3">
-             <input type="date" value={tempFilters.dateRange.start} onChange={e => setTempFilters(p => ({...p, dateRange: {...p.dateRange, start: e.target.value}}))} className="bg-transparent focus:outline-none w-full text-center date-input text-gray-700 dark:text-gray-200"/>
-             <span className="text-gray-300 dark:text-gray-500">→</span>
-             <input type="date" value={tempFilters.dateRange.end} onChange={e => setTempFilters(p => ({...p, dateRange: {...p.dateRange, end: e.target.value}}))} className="bg-transparent focus:outline-none w-full text-center date-input text-gray-700 dark:text-gray-200"/>
+           <div className="flex gap-2 text-[11px] text-gray-700 dark:text-gray-200 font-medium bg-white dark:bg-aether-dark-bg border border-gray-100 dark:border-white/10 p-3 rounded-xl items-center justify-between shadow-sm mb-3 overflow-hidden">
+             <input 
+               ref={startDateRef}
+               type="date" 
+               value={tempFilters.dateRange.start} 
+               onChange={e => setTempFilters(p => ({...p, dateRange: {...p.dateRange, start: e.target.value}}))} 
+               onClick={() => handleDateClick(startDateRef)}
+               className="bg-transparent focus:outline-none flex-1 text-center date-input date-input-no-icon text-gray-700 dark:text-gray-200 [color-scheme:light] dark:[color-scheme:dark] cursor-pointer" 
+               style={{ color: 'rgb(55, 65, 81)' }} 
+             />
+             <span className="text-gray-300 dark:text-gray-500 flex-shrink-0">→</span>
+             <input 
+               ref={endDateRef}
+               type="date" 
+               value={tempFilters.dateRange.end} 
+               onChange={e => setTempFilters(p => ({...p, dateRange: {...p.dateRange, end: e.target.value}}))} 
+               onClick={() => handleDateClick(endDateRef)}
+               className="bg-transparent focus:outline-none flex-1 text-center date-input date-input-no-icon text-gray-700 dark:text-gray-200 [color-scheme:light] dark:[color-scheme:dark] cursor-pointer" 
+               style={{ color: 'rgb(55, 65, 81)' }} 
+             />
            </div>
            <div className="grid grid-cols-2 gap-1.5">
             {[7, 30].map((d) => (
-              <button key={d} onClick={() => setDatePreset(d)} className={`py-2 rounded-xl text-[10px] font-bold transition-all duration-300 bg-white dark:bg-aether-dark-bg text-gray-400 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-gray-200 border border-gray-100 dark:border-white/10`}>
+              <button key={d} onClick={() => setDatePreset(d)} className={`py-2 rounded-xl text-[10px] font-bold transition-all duration-300 bg-white dark:bg-aether-dark-bg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-100 dark:border-white/10`}>
                 {d}D
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-300 mt-3">기본값: {initialFilters.dateRange.start} ~ {initialFilters.dateRange.end} (최근 7일)</p>
+          <p className="text-[11px] text-gray-700 dark:text-gray-200 mt-3">기본값: {initialFilters.dateRange.start} ~ {initialFilters.dateRange.end} (최근 7일)</p>
         </div>
 
         {/* 1. SCALE */}
         <FilterSection title="Scale (거래 규모)" icon={DollarSign} isOpen={true}>
           <div className="space-y-1">
-            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.totalVolume[0].toLocaleString()} ~ {tempFilters.totalVolume[1].toLocaleString()}</span></div>
+            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.totalVolume[0].toLocaleString()} ~ {tempFilters.totalVolume[1].toLocaleString()}</span></div>
             <GelSlider isDual min={0} max={100} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
-            <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">기간 내 매수·매도 합계(토큰 수량).</p>
+            <p className="text-[10px] text-gray-700 dark:text-gray-200 px-1">기간 내 매수·매도 합계(토큰 수량).</p>
           </div>
           <div className="space-y-1">
-            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.avgTradeSize[0].toLocaleString()} ~ {tempFilters.avgTradeSize[1].toLocaleString()}</span></div>
+            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.avgTradeSize[0].toLocaleString()} ~ {tempFilters.avgTradeSize[1].toLocaleString()}</span></div>
             <GelSlider isDual min={0} max={1000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
-            <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">총 거래 수량 / 거래 횟수.</p>
+            <p className="text-[10px] text-gray-700 dark:text-gray-200 px-1">총 거래 수량 / 거래 횟수.</p>
           </div>
         </FilterSection>
 
         {/* 2. BEHAVIOR */}
         <FilterSection title="Behavior (거래 패턴)" icon={BarChart2}>
             <div className="space-y-1">
-              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Net Buy Ratio</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.netBuyRatio[0].toFixed(1)} ~ {tempFilters.netBuyRatio[1].toFixed(1)}</span></div>
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Net Buy Ratio</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.netBuyRatio[0].toFixed(1)} ~ {tempFilters.netBuyRatio[1].toFixed(1)}</span></div>
               <GelSlider isDual min={-1} max={1} value={tempFilters.netBuyRatio} onChange={(v) => setTempFilters(p => ({...p, netBuyRatio: v as [number, number]}))} />
-              <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">(-1) 순매도 ↔ 순매수 (+1), 0 기준.</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-200 px-1">(-1) 순매도 ↔ 순매수 (+1), 0 기준.</p>
             </div>
             <div className="space-y-1">
-              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.txCount[0]} ~ {tempFilters.txCount[1]}</span></div>
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.txCount[0]} ~ {tempFilters.txCount[1]}</span></div>
               <GelSlider isDual min={0} max={500} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
-              <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">기간 내 거래 횟수 범위.</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-200 px-1">기간 내 거래 횟수 범위.</p>
             </div>
         </FilterSection>
         
         {/* 3. CHAIN MOBILITY */}
         <FilterSection title="Chain · IBC" icon={Share2}>
-            <div className="space-y-1"><div className="px-1 text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">ATOM Volume Share</div><GelSlider min={0} max={1} value={tempFilters.atomShare} onChange={(v) => setTempFilters(p => ({...p, atomShare: v as number}))} /></div>
-            <div className="space-y-1"><div className="px-1 text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">ATOMONE Volume Share</div><GelSlider min={0} max={1} value={tempFilters.oneShare} onChange={(v) => setTempFilters(p => ({...p, oneShare: v as number}))} /></div>
-            <div className="space-y-1"><div className="px-1 text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">IBC Ratio</div><GelSlider min={0} max={1} value={tempFilters.ibcShare} onChange={(v) => setTempFilters(p => ({...p, ibcShare: v as number}))} /></div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">ATOM Volume Share</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.atomShare[0].toFixed(2)} ~ {tempFilters.atomShare[1].toFixed(2)}</span></div>
+              <GelSlider isDual min={0} max={1} value={tempFilters.atomShare} onChange={(v) => setTempFilters(p => ({...p, atomShare: v as [number, number]}))} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">ATOMONE Volume Share</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.oneShare[0].toFixed(2)} ~ {tempFilters.oneShare[1].toFixed(2)}</span></div>
+              <GelSlider isDual min={0} max={1} value={tempFilters.oneShare} onChange={(v) => setTempFilters(p => ({...p, oneShare: v as [number, number]}))} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">IBC Ratio</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.ibcShare[0].toFixed(2)} ~ {tempFilters.ibcShare[1].toFixed(2)}</span></div>
+              <GelSlider isDual min={0} max={1} value={tempFilters.ibcShare} onChange={(v) => setTempFilters(p => ({...p, ibcShare: v as [number, number]}))} />
+            </div>
         </FilterSection>
 
         {/* 4. ACTIVITY */}
         <FilterSection title="Activity (활동성)" icon={Activity}>
-           <div className="space-y-1"><div className="px-1 text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Active Days</div><GelSlider min={0} max={30} value={tempFilters.activeDays} onChange={(v) => setTempFilters(p => ({...p, activeDays: v as number}))} /></div>
+           <div className="space-y-1">
+             <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Active Days</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.activeDays[0]} ~ {tempFilters.activeDays[1]}</span></div>
+             <GelSlider isDual min={0} max={30} value={tempFilters.activeDays} onChange={(v) => setTempFilters(p => ({...p, activeDays: v as [number, number]}))} />
+           </div>
            <div className="pt-2">
-             <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase block mb-2 px-1">Recent Activity</span>
+             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase block mb-2 px-1">Recent Activity</span>
              <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-white/10">
                {(['3D', '7D', '30D', 'ALL'] as const).map(opt => (
-                 <button key={opt} onClick={() => setTempFilters(p => ({...p, recentActivity: opt}))} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-200 ${tempFilters.recentActivity === opt ? 'bg-white dark:bg-aether-dark-bg shadow-sm text-indigo-600 dark:text-indigo-400 ring-1 ring-gray-100 dark:ring-white/10' : 'text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200'}`}>
+                 <button key={opt} onClick={() => setTempFilters(p => ({...p, recentActivity: opt}))} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-200 ${tempFilters.recentActivity === opt ? 'bg-white dark:bg-aether-dark-bg shadow-sm text-indigo-600 dark:text-indigo-400 ring-1 ring-gray-100 dark:ring-white/10' : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100'}`}>
                    {opt === 'ALL' ? '전체' : `최근 ${opt.replace('D','일')}`}
                  </button>
                ))}
@@ -140,19 +176,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
 
         {/* 5. IMPACT */}
         <FilterSection title="Impact (영향력)" icon={Target}>
-            <div className="space-y-1"><div className="px-1 text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">AII Score</div><GelSlider min={0} max={100} value={tempFilters.aiiScore} onChange={(v) => setTempFilters(p => ({...p, aiiScore: v as number}))} /></div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">AII Score</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.aiiScore[0]} ~ {tempFilters.aiiScore[1]}</span></div>
+              <GelSlider isDual min={0} max={100} value={tempFilters.aiiScore} onChange={(v) => setTempFilters(p => ({...p, aiiScore: v as [number, number]}))} />
+            </div>
             <div className="pt-2">
-               <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase block mb-2 px-1">Timing Profile</span>
+               <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase block mb-2 px-1">Timing Profile</span>
                <div className="grid grid-cols-4 gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-white/10">
                   {(['LEADING', 'SYNC', 'LAGGING', 'ALL'] as const).map(opt => (
-                     <button key={opt} onClick={() => setTempFilters(p => ({...p, timingType: opt}))} className={`py-1.5 text-[10px] font-bold rounded-lg transition-all duration-200 ${tempFilters.timingType === opt ? 'bg-white dark:bg-aether-dark-bg shadow-sm text-indigo-600 dark:text-indigo-400 ring-1 ring-gray-100 dark:ring-white/10' : 'text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200'}`}>
+                     <button key={opt} onClick={() => setTempFilters(p => ({...p, timingType: opt}))} className={`py-1.5 text-[10px] font-bold rounded-lg transition-all duration-200 ${tempFilters.timingType === opt ? 'bg-white dark:bg-aether-dark-bg shadow-sm text-indigo-600 dark:text-indigo-400 ring-1 ring-gray-100 dark:ring-white/10' : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100'}`}>
                         {opt}
                      </button>
                   ))}
                </div>
             </div>
             <div className="space-y-1 pt-6">
-              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Correlation</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.correlation[0].toFixed(1)} ~ {tempFilters.correlation[1].toFixed(1)}</span></div>
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Correlation</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.correlation[0].toFixed(1)} ~ {tempFilters.correlation[1].toFixed(1)}</span></div>
               <GelSlider isDual min={-1} max={1} value={tempFilters.correlation} onChange={(v) => setTempFilters(p => ({...p, correlation: v as [number, number]}))} />
             </div>
         </FilterSection>
@@ -161,7 +200,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
 
       {/* Apply Button */}
       <div className="p-6 border-t border-gray-50 dark:border-white/5 bg-white/80 dark:bg-aether-dark-card/80">
-        <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-300 mb-3">
+        <div className="flex items-center justify-between text-[11px] text-gray-700 dark:text-gray-200 mb-3">
           <span>‘적용하기’ 클릭 시에만 중앙/우측/백테스트 패널이 갱신됩니다.</span>
           <button onClick={resetFilters} className="inline-flex items-center gap-1 text-red-500 dark:text-red-400 font-semibold hover:underline text-[11px]">
             <RefreshCcw size={10} /> Reset
