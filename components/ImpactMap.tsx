@@ -19,31 +19,29 @@ interface ImpactMapProps {
 }
 
 const isNodeActive = (node: NodeData, filters: FilterState): boolean => {
-  // Total Volume: 필터가 0보다 크면 최소값 체크
-  if (filters.totalVolume > 0 && node.totalVolume < filters.totalVolume) return false;
+  // Total Volume: 범위 체크
+  if (node.totalVolume < filters.totalVolume[0] || node.totalVolume > filters.totalVolume[1]) return false;
   
-  // Average Trade Size: 필터가 0보다 크면 최소값 체크
-  if (filters.avgTradeSize > 0 && node.avgTradeSize < filters.avgTradeSize) return false;
+  // Average Trade Size: 범위 체크
+  if (node.avgTradeSize < filters.avgTradeSize[0] || node.avgTradeSize > filters.avgTradeSize[1]) return false;
   
-  // Net Buy Ratio: 범위 체크 (기본값 [-1, 1]이 아니면 필터 적용)
-  if (!(filters.netBuyRatio[0] === -1 && filters.netBuyRatio[1] === 1)) {
-    if (node.netBuyRatio < filters.netBuyRatio[0] || node.netBuyRatio > filters.netBuyRatio[1]) return false;
-  }
+  // Net Buy Ratio: 범위 체크
+  if (node.netBuyRatio < filters.netBuyRatio[0] || node.netBuyRatio > filters.netBuyRatio[1]) return false;
   
-  // Tx Count: 필터가 0보다 크면 최소값 체크
-  if (filters.txCount > 0 && node.txCount < filters.txCount) return false;
+  // Tx Count: 범위 체크
+  if (node.txCount < filters.txCount[0] || node.txCount > filters.txCount[1]) return false;
   
-  // ATOM Share: 필터가 0보다 크면 최소값 체크
-  if (filters.atomShare > 0 && node.atomVolumeShare < filters.atomShare) return false;
+  // ATOM Share: 범위 체크
+  if (node.atomVolumeShare < filters.atomShare[0] || node.atomVolumeShare > filters.atomShare[1]) return false;
   
-  // ATOMONE Share: 필터가 0보다 크면 최소값 체크
-  if (filters.oneShare > 0 && node.oneVolumeShare < filters.oneShare) return false;
+  // ATOMONE Share: 범위 체크
+  if (node.oneVolumeShare < filters.oneShare[0] || node.oneVolumeShare > filters.oneShare[1]) return false;
   
-  // IBC Share: 필터가 0보다 크면 최소값 체크
-  if (filters.ibcShare > 0 && node.ibcVolumeShare < filters.ibcShare) return false;
+  // IBC Share: 범위 체크
+  if (node.ibcVolumeShare < filters.ibcShare[0] || node.ibcVolumeShare > filters.ibcShare[1]) return false;
   
-  // Active Days: 필터가 0보다 크면 최소값 체크
-  if (filters.activeDays > 0 && node.activeDays < filters.activeDays) return false;
+  // Active Days: 범위 체크
+  if (node.activeDays < filters.activeDays[0] || node.activeDays > filters.activeDays[1]) return false;
 
   // Recent Activity: 'ALL'이 아니면 날짜 체크
   if (filters.recentActivity !== 'ALL') {
@@ -54,16 +52,14 @@ const isNodeActive = (node: NodeData, filters: FilterState): boolean => {
     if (daysAgo > filterDays) return false;
   }
 
-  // AII Score: 필터가 0보다 크면 최소값 체크
-  if (filters.aiiScore > 0 && node.size < filters.aiiScore) return false;
+  // AII Score: 범위 체크
+  if (node.size < filters.aiiScore[0] || node.size > filters.aiiScore[1]) return false;
   
   // Timing Type: 'ALL'이 아니면 타입 체크
   if (filters.timingType !== 'ALL' && node.timing !== filters.timingType) return false;
   
-  // Correlation: 기본값 [-1, 1]이 아니면 범위 체크
-  if (!(filters.correlation[0] === -1 && filters.correlation[1] === 1)) {
-    if (node.correlationScore < filters.correlation[0] || node.correlationScore > filters.correlation[1]) return false;
-  }
+  // Correlation: 범위 체크
+  if (node.correlationScore < filters.correlation[0] || node.correlationScore > filters.correlation[1]) return false;
 
   return true;
 };

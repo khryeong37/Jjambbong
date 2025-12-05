@@ -51,16 +51,16 @@ export interface MarketData {
 
 export interface FilterState {
   dateRange: { start: string; end: string };
-  totalVolume: number;
-  avgTradeSize: number;
+  totalVolume: [number, number];
+  avgTradeSize: [number, number];
   netBuyRatio: [number, number];
-  txCount: number;
-  atomShare: number;
-  oneShare: number;
-  ibcShare: number;
-  activeDays: number;
+  txCount: [number, number];
+  atomShare: [number, number];
+  oneShare: [number, number];
+  ibcShare: [number, number];
+  activeDays: [number, number];
   recentActivity: '3D' | '7D' | '30D' | 'ALL';
-  aiiScore: number;
+  aiiScore: [number, number];
   timingType: 'LEADING' | 'SYNC' | 'LAGGING' | 'ALL';
   correlation: [number, number];
 }

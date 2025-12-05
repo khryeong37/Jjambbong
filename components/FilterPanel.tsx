@@ -91,13 +91,13 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
         {/* 1. SCALE */}
         <FilterSection title="Scale (거래 규모)" icon={DollarSign} isOpen={true}>
           <div className="space-y-1">
-            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.totalVolume.toLocaleString()}</span></div>
-            <GelSlider min={0} max={100} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as number}))} />
+            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.totalVolume[0].toLocaleString()} ~ {tempFilters.totalVolume[1].toLocaleString()}</span></div>
+            <GelSlider isDual min={0} max={100} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
             <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">기간 내 매수·매도 합계(토큰 수량).</p>
           </div>
           <div className="space-y-1">
-            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.avgTradeSize.toLocaleString()}</span></div>
-            <GelSlider min={0} max={1000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as number}))} />
+            <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.avgTradeSize[0].toLocaleString()} ~ {tempFilters.avgTradeSize[1].toLocaleString()}</span></div>
+            <GelSlider isDual min={0} max={1000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
             <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">총 거래 수량 / 거래 횟수.</p>
           </div>
         </FilterSection>
@@ -110,9 +110,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
               <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">(-1) 순매도 ↔ 순매수 (+1), 0 기준.</p>
             </div>
             <div className="space-y-1">
-              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.txCount}</span></div>
-              <GelSlider min={0} max={500} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as number}))} />
-              <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">기간 내 거래 횟수 하한.</p>
+              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400">{tempFilters.txCount[0]} ~ {tempFilters.txCount[1]}</span></div>
+              <GelSlider isDual min={0} max={500} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
+              <p className="text-[10px] text-gray-400 dark:text-gray-300 px-1">기간 내 거래 횟수 범위.</p>
             </div>
         </FilterSection>
         
