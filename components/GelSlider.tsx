@@ -133,23 +133,22 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   const rangeStart = isDual && Array.isArray(value) ? getPercentage(value[0]) : 0;
   const rangeEnd = isDual && Array.isArray(value) ? getPercentage(value[1]) : getPercentage(value as number);
 
-  // Clean container style
+  // Clean container style - Modern glass track
   const containerStyle: React.CSSProperties = {
-    '--range-handle-border': 'oklch(0.3 0.01 212 / 0.5)',
     position: 'relative',
     width: '100%',
     padding: '0',
-    height: '0.6em',
+    height: '6px',
     borderRadius: '99vw',
     background: isDark 
-      ? 'linear-gradient(to bottom, #1e293b, #0f172a)'
-      : 'linear-gradient(to bottom, #f3f4f6, #e5e7eb)',
+      ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6))'
+      : 'linear-gradient(to bottom, rgba(226, 232, 240, 0.8), rgba(241, 245, 249, 0.6))',
     border: isDark 
-      ? '1px solid rgba(148, 163, 184, 0.15)'
-      : '1px solid rgba(209, 213, 219, 0.4)',
+      ? '1px solid rgba(71, 85, 105, 0.3)'
+      : '1px solid rgba(203, 213, 225, 0.6)',
     boxShadow: isDark
-      ? 'inset 0 2px 4px rgba(196, 181, 253, 0.2), 0 1px 2px rgba(196, 181, 253, 0.15)'
-      : 'inset 0 2px 4px rgba(196, 181, 253, 0.1), 0 1px 2px rgba(196, 181, 253, 0.15)',
+      ? 'inset 0 1px 3px rgba(0, 0, 0, 0.3)'
+      : 'inset 0 1px 3px rgba(0, 0, 0, 0.06)',
     overflow: 'visible'
   } as React.CSSProperties;
 
@@ -167,25 +166,22 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   const borderRadius = `${borderRadiusLeft} ${borderRadiusRight} ${borderRadiusRight} ${borderRadiusLeft}`;
   
   const rangeBarStyle: React.CSSProperties = {
-    '--range-size': rangeEnd - rangeStart,
-    '--slider-length': sliderRef.current?.clientWidth ?? 0,
     height: '100%',
     borderRadius: borderRadius,
     position: 'absolute',
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: dragging 
-      ? 'linear-gradient(90deg, #c4b5fd 0%, #38bdf8 25%, #a78bfa 50%, #38bdf8 75%, #c4b5fd 100%)'
-      : '#c4b5fd',
+      ? 'linear-gradient(90deg, #818cf8 0%, #a78bfa 50%, #818cf8 100%)'
+      : 'linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)',
     backgroundSize: dragging ? '200% 100%' : '100% 100%',
-    backgroundPosition: dragging ? '0% 0%' : '0% 0%',
     border: 'none',
     boxShadow: dragging
-      ? '0 0 16px rgba(196, 181, 253, 0.6), 0 0 32px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-      : '0 2px 8px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-    transition: dragging ? 'none' : 'left 0.15s cubic-bezier(0.4, 0, 0.2, 1), width 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
-    animation: dragging ? 'shimmer 1.5s ease-in-out infinite' : 'none',
-    willChange: dragging ? 'left, width, background-position' : 'auto',
+      ? '0 0 12px rgba(129, 140, 248, 0.5), 0 0 24px rgba(167, 139, 250, 0.3)'
+      : '0 1px 4px rgba(99, 102, 241, 0.3)',
+    transition: dragging ? 'none' : 'left 0.15s ease-out, width 0.15s ease-out, box-shadow 0.2s ease',
+    animation: dragging ? 'shimmer 2s ease-in-out infinite' : 'none',
+    willChange: dragging ? 'left, width' : 'auto',
   } as React.CSSProperties;
 
   const rangeBarBeforeStyle: React.CSSProperties = {
@@ -202,10 +198,13 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   };
 
   const handleStyle: React.CSSProperties = {
-    width: '1.3em', height: '1.3em',
-    position: 'absolute', top: '50%',
+    width: '16px', 
+    height: '16px',
+    position: 'absolute', 
+    top: '50%',
     transform: 'translate(-50%, -50%)',
-    cursor: 'pointer', zIndex: 10,
+    cursor: 'grab', 
+    zIndex: 10,
     transition: dragging ? 'none' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
     willChange: dragging ? 'transform, left' : 'auto',
   };
@@ -221,22 +220,23 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
       width: '100%', 
       height: '100%', 
       borderRadius: '50%',
-      background: isActive 
-        ? 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)'
-        : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+      background: isDark
+        ? 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)'
+        : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
       border: isActive
-        ? '3px solid #a78bfa'
+        ? '2px solid #818cf8'
         : isDark 
-          ? '2px solid rgba(148, 163, 184, 0.4)'
-          : '2px solid rgba(196, 181, 253, 0.6)',
+          ? '2px solid rgba(148, 163, 184, 0.5)'
+          : '2px solid rgba(203, 213, 225, 0.8)',
       boxShadow: isActive
-        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(196, 181, 253, 0.5), 0 0 0 3px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+        ? `0 0 0 4px ${isDark ? 'rgba(129, 140, 248, 0.2)' : 'rgba(129, 140, 248, 0.15)'}, 0 2px 8px rgba(0, 0, 0, 0.15)`
         : isDark
-          ? '0 4px 12px rgba(196, 181, 253, 0.5), 0 2px 4px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          : '0 4px 12px rgba(196, 181, 253, 0.5), 0 2px 6px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
-      transform: isActive ? 'scale(1.2)' : 'scale(1)',
+          ? '0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)'
+          : '0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+      transform: isActive ? 'scale(1.15)' : 'scale(1)',
       transition: dragging ? 'none' : 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
       willChange: dragging || isActive ? 'transform' : 'auto',
+      cursor: dragging === handleType ? 'grabbing' : 'grab',
     };
     return baseStyle;
   };

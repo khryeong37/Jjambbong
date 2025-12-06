@@ -92,7 +92,7 @@ export default function App() {
   }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
 
   return (
-    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-aether-bg dark:bg-aether-dark-bg`}>
+    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-slate-100 dark:bg-slate-950`}>
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
       <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>
