@@ -111,11 +111,19 @@ export default function App() {
       <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[336px]'}`}>
         <div className="h-full relative z-10 flex flex-col gap-3 overflow-hidden" style={{ paddingLeft: '0px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px' }}>
           
-          {/* TOP ROW: MAP & INTELLIGENCE - 버블차트 우선 */}
-          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0" style={{ paddingLeft: '12px' }}>
+          {/* TOP ROW: MAP & INTELLIGENCE - 16:9 비율 최적화 */}
+          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0" style={{ 
+            paddingLeft: '12px',
+            // 16:9 비율에서 최적 높이: 화면 높이의 약 55-60% (패딩/갭 제외)
+            minHeight: 'calc(100vh - 520px)',
+            maxHeight: 'calc(100vh - 420px)'
+          }}>
              
-             {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ minHeight: '300px' }}>
+             {/* Impact Map - 16:9에서 충분한 공간 확보 */}
+             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ 
+               minHeight: '400px',
+               height: '100%'
+             }}>
                 <ImpactMap 
                   nodes={nodes} 
                   selectedNode={selectedNode} 
@@ -126,8 +134,11 @@ export default function App() {
                 />
              </div>
 
-             {/* Node Intelligence - 작은 화면에서는 세로로 배치되지만 Impact Map이 우선 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0">
+             {/* Node Intelligence - 16:9에서 적절한 너비 유지 */}
+             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0" style={{
+               minHeight: '400px',
+               height: '100%'
+             }}>
                 <NodeIntelligence 
                   selectedNode={selectedNode}
                   slots={slots}
@@ -136,11 +147,12 @@ export default function App() {
              </div>
           </div>
 
-          {/* BOTTOM ROW: SIMULATION ENGINE - 작은 화면에서 높이 축소, 버블차트 우선 */}
+          {/* BOTTOM ROW: SIMULATION ENGINE - 16:9 비율 최적화 */}
           <div className="grid grid-cols-12 gap-3 flex-shrink-0" style={{ 
-            height: 'clamp(380px, 35vh, 480px)',
-            minHeight: '380px',
-            maxHeight: '480px',
+            // 16:9 비율에서 적절한 높이: 화면 높이의 약 35-40%
+            height: 'clamp(400px, calc(100vh * 0.38), 500px)',
+            minHeight: '400px',
+            maxHeight: '500px',
             paddingLeft: '12px'
           }}>
              <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
