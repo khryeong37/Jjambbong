@@ -702,9 +702,22 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   className={`flex-1 border rounded-xl p-2 relative overflow-hidden flex flex-col justify-center transition-all duration-300 min-h-0 ${
                     slot.weight < 5
                       ? 'opacity-40 bg-gray-50 dark:bg-white/5 border-dashed'
+                      : slot.node
+                      ? 'bg-white/80 dark:bg-slate-800/60 border-indigo-200/50 dark:border-indigo-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                       : 'bg-white dark:bg-aether-dark-card/50 border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                   }`}
                 >
+                  {/* Shimmer effect when node is assigned */}
+                  {slot.node && slot.weight >= 5 && (
+                    <div 
+                      className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(129, 140, 248, 0.08) 50%, transparent 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'slot-shimmer 3s ease-in-out infinite',
+                      }}
+                    />
+                  )}
                   <div className="px-2 w-full h-full flex items-center gap-2 relative overflow-hidden">
                     {/* A/B/C 레이블 - 세로 중앙 */}
                     <div 
@@ -784,70 +797,204 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         {/* Run Overlay */}
         {(!hasRun || isSimulating) && (
           <div
-            className={`absolute inset-0 z-20 bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-md flex items-center justify-center flex-col rounded-[32px] transition-opacity duration-300 ${
+            className={`absolute inset-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex items-center justify-center flex-col rounded-[32px] transition-all duration-500 ${
               !isRunnable && !isSimulating ? 'opacity-50' : ''
             }`}
           >
             {isSimulating ? (
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-indigo-100 dark:border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+              <div className="flex flex-col items-center gap-8">
+                {/* Epic loading animation */}
+                <div className="relative w-32 h-32">
+                  {/* Outer rotating ring */}
+                  <div 
+                    className="absolute inset-0 rounded-full border-2 border-transparent"
+                    style={{
+                      borderTopColor: 'rgba(99, 102, 241, 0.8)',
+                      borderRightColor: 'rgba(168, 85, 247, 0.4)',
+                      animation: 'spin 1.5s linear infinite',
+                    }}
+                  />
+                  {/* Middle rotating ring - opposite direction */}
+                  <div 
+                    className="absolute inset-3 rounded-full border-2 border-transparent"
+                    style={{
+                      borderBottomColor: 'rgba(168, 85, 247, 0.8)',
+                      borderLeftColor: 'rgba(99, 102, 241, 0.4)',
+                      animation: 'spin 2s linear infinite reverse',
+                    }}
+                  />
+                  {/* Inner pulsing circle */}
+                  <div 
+                    className="absolute inset-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600"
+                    style={{
+                      animation: 'pulse-glow 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  {/* Ripple effects */}
+                  <div 
+                    className="absolute inset-0 rounded-full border border-indigo-400/50"
+                    style={{
+                      animation: 'ripple 2s ease-out infinite',
+                    }}
+                  />
+                  <div 
+                    className="absolute inset-0 rounded-full border border-purple-400/50"
+                    style={{
+                      animation: 'ripple 2s ease-out infinite 0.5s',
+                    }}
+                  />
+                  <div 
+                    className="absolute inset-0 rounded-full border border-indigo-400/50"
+                    style={{
+                      animation: 'ripple 2s ease-out infinite 1s',
+                    }}
+                  />
+                  {/* Center icon */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <TrendingUp
-                      size={20}
-                      className="text-indigo-500 dark:text-indigo-400"
+                      size={24}
+                      className="text-white drop-shadow-lg"
+                      style={{
+                        animation: 'float 2s ease-in-out infinite',
+                      }}
                     />
                   </div>
                 </div>
-                <div className="text-xs font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-[0.2em] animate-pulse">
-                  Processing Strategy
+                
+                {/* Animated text */}
+                <div className="text-center space-y-3">
+                  <div 
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-[0.3em]"
+                    style={{
+                      animation: 'text-shimmer 2s ease-in-out infinite',
+                    }}
+                  >
+                    Analyzing Strategy
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="w-1.5 h-1.5 rounded-full bg-indigo-500"
+                        style={{
+                          animation: `bounce-dot 1.4s ease-in-out infinite`,
+                          animationDelay: `${i * 0.1}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
               <button
                 onClick={handleRunSimulation}
                 disabled={!isRunnable}
-                className="group relative transition-all disabled:cursor-not-allowed"
+                className="group relative transition-all disabled:cursor-not-allowed focus:outline-none"
               >
-                {/* Sphere + 텍스트를 한 덩어리로 아래로 내려서 중앙 정렬 */}
-                <div className="flex flex-col items-center justify-center gap-8 transform translate-y-10">
+                {/* Main container */}
+                <div className="flex flex-col items-center justify-center gap-8 transform translate-y-5">
+                  {/* Animated orb */}
                   <div
-                    className={`relative w-28 h-28 transition-all ${
-                      !isRunnable ? 'grayscale' : ''
+                    className={`relative w-32 h-32 transition-all duration-500 ${
+                      !isRunnable ? 'grayscale opacity-50' : ''
                     }`}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-500 to-indigo-500 rounded-full blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500 animate-pulse" />
-
-                    {/* Background animation disabled for performance */}
-                    <div className="relative w-full h-full rounded-full overflow-hidden bg-gradient-to-tr from-purple-500/40 to-indigo-500/30" />
-
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <PlayCircle
-                        size={36}
-                        className="text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                    {/* Background glow */}
+                    <div 
+                      className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 blur-2xl transition-all duration-500"
+                      style={{
+                        opacity: isRunnable ? 0.4 : 0.1,
+                        transform: 'scale(1.2)',
+                        animation: isRunnable ? 'pulse-glow 3s ease-in-out infinite' : 'none',
+                      }}
+                    />
+                    
+                    {/* Rotating border ring */}
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'conic-gradient(from 0deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8), rgba(236, 72, 153, 0.8), rgba(99, 102, 241, 0.8))',
+                        padding: '2px',
+                        animation: isRunnable ? 'spin 4s linear infinite' : 'none',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                      }}
+                    >
+                      <div className="w-full h-full rounded-full bg-white/90 dark:bg-slate-900/90" />
+                    </div>
+                    
+                    {/* Inner gradient circle */}
+                    <div 
+                      className="absolute inset-2 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-500"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 50%, rgba(236, 72, 153, 0.15) 100%)',
+                      }}
+                    >
+                      {/* Shimmer overlay */}
+                      <div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'shimmer 2s ease-in-out infinite',
+                        }}
                       />
                     </div>
+
+                    {/* Play icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div 
+                        className="relative group-hover:scale-110 transition-all duration-300"
+                        style={{
+                          filter: 'drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4))',
+                        }}
+                      >
+                        <PlayCircle
+                          size={40}
+                          className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500"
+                          strokeWidth={1.5}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Hover ripple effect */}
+                    <div 
+                      className="absolute inset-0 rounded-full border-2 border-indigo-400/0 group-hover:border-indigo-400/50 group-hover:scale-110 transition-all duration-500 group-hover:opacity-0"
+                      style={{
+                        transitionDelay: '0.1s',
+                      }}
+                    />
                   </div>
 
-                  <div className="text-center space-y-2">
+                  {/* Text content */}
+                  <div className="text-center space-y-3">
                     <div
-                      className={`text-2xl font-black tracking-tight transition-colors ${
+                      className={`text-2xl font-black tracking-tight transition-all duration-300 ${
                         isRunnable
-                          ? 'text-gray-900 dark:text-aether-dark-text group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                          : 'text-gray-400 dark:text-aether-dark-subtext'
+                          ? 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:tracking-wide'
+                          : 'text-gray-400 dark:text-gray-500'
                       }`}
                     >
                       {isRunnable ? 'RUN SIMULATION' : 'ADD NODES TO SLOTS'}
                     </div>
-                    <div className="text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-[0.2em] bg-gray-50 dark:bg-white/5 px-3 py-1 rounded-full">
-                      Allocated{' '}
-                      {Math.round(
-                        slots.reduce(
-                          (a, b) => a + (b.node ? b.weight : 0),
-                          0
-                        )
-                      )}
-                      % Capital
+                    <div 
+                      className="inline-flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] bg-gray-100/80 dark:bg-white/5 px-4 py-1.5 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
+                    >
+                      <div 
+                        className={`w-1.5 h-1.5 rounded-full ${isRunnable ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                        style={{
+                          animation: isRunnable ? 'pulse 2s ease-in-out infinite' : 'none',
+                        }}
+                      />
+                      <span>
+                        {Math.round(
+                          slots.reduce(
+                            (a, b) => a + (b.node ? b.weight : 0),
+                            0
+                          )
+                        )}% Capital Allocated
+                      </span>
                     </div>
                   </div>
                 </div>
