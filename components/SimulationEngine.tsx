@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import {
   NodeData,
@@ -317,6 +317,42 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   setSlots,
 }) => {
   const [isDark, setIsDark] = useState(false);
+  
+  // Track which slots just received a new node for animation
+  const [animatingSlots, setAnimatingSlots] = useState<{ [key: string]: boolean }>({});
+  const prevSlotsRef = useRef<{ [key: string]: string | null }>({});
+  
+  // Detect slot changes and trigger animations
+  useEffect(() => {
+    const newAnimating: { [key: string]: boolean } = {};
+    
+    slots.forEach((slot) => {
+      const prevNodeId = prevSlotsRef.current[slot.id];
+      const currentNodeId = slot.node?.id || null;
+      
+      // If a new node was added (was null or different node)
+      if (currentNodeId && currentNodeId !== prevNodeId) {
+        newAnimating[slot.id] = true;
+      }
+    });
+    
+    // Always update previous slots ref FIRST
+    slots.forEach((slot) => {
+      prevSlotsRef.current[slot.id] = slot.node?.id || null;
+    });
+    
+    // Update animation state only for changed slots
+    if (Object.keys(newAnimating).length > 0) {
+      setAnimatingSlots(newAnimating);
+      
+      // Clear animation after it completes
+      const timer = setTimeout(() => {
+        setAnimatingSlots({});
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [slots]);
   
   useEffect(() => {
     const checkDarkMode = () => {
@@ -696,6 +732,8 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               // 표시 순서: A(0), B(1), C(2) - A가 위, C가 아래
               const originalIndex = index;
               const slotLabels = ['A', 'B', 'C'];
+              const isAnimating = animatingSlots[slot.id];
+              
               return (
                 <div
                   key={slot.id}
@@ -705,10 +743,23 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       : slot.node
                       ? 'bg-white/80 dark:bg-slate-800/60 border-indigo-200/50 dark:border-indigo-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                       : 'bg-white dark:bg-aether-dark-card/50 border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                  }`}
+                  } ${isAnimating ? 'slot-fill-animation' : ''}`}
                 >
+                  {/* Drop fill effect when node is assigned */}
+                  {isAnimating && (
+                    <div 
+                      className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl slot-drop-fill"
+                      style={{
+                        background: slot.node?.bias === 'ATOM' 
+                          ? 'radial-gradient(ellipse at center top, rgba(249, 115, 22, 0.4) 0%, rgba(249, 115, 22, 0.1) 50%, transparent 70%)'
+                          : slot.node?.bias === 'ATOMONE'
+                          ? 'radial-gradient(ellipse at center top, rgba(56, 189, 248, 0.4) 0%, rgba(56, 189, 248, 0.1) 50%, transparent 70%)'
+                          : 'radial-gradient(ellipse at center top, rgba(168, 85, 247, 0.4) 0%, rgba(168, 85, 247, 0.1) 50%, transparent 70%)',
+                      }}
+                    />
+                  )}
                   {/* Shimmer effect when node is assigned */}
-                  {slot.node && slot.weight >= 5 && (
+                  {slot.node && slot.weight >= 5 && !isAnimating && (
                     <div 
                       className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
                       style={{
@@ -718,7 +769,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       }}
                     />
                   )}
-                  <div className="px-2 w-full h-full flex items-center gap-2 relative overflow-hidden">
+                  <div className={`px-2 w-full h-full flex items-center gap-2 relative overflow-hidden ${isAnimating ? 'slot-content-reveal' : ''}`}>
                     {/* A/B/C 레이블 - 세로 중앙 */}
                     <div 
                       className="flex items-center justify-center w-5 h-5 border-2 rounded-full text-[9px] font-bold text-white transition-colors duration-200 flex-shrink-0"
@@ -1017,7 +1068,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               }`}
             >
               {result && result.totalPnL >= 0 ? '+' : ''}
-              {result ? result.totalPnL.toFixed(2) : '0.00'}
+              {result ? result.totalPnL.toFixed(1) : '0.0'}
             </div>
           </div>
           <div className="flex-1 p-3 bg-white dark:bg-aether-dark-card/50 rounded-2xl shadow-soft dark:shadow-none border border-gray-50 dark:border-white/10">
@@ -1100,10 +1151,14 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       fontSize: '10px',
                       textTransform: 'uppercase',
                     }}
-                    formatter={(value: number) => [
-                      value.toFixed(2),
-                      asset,
-                    ]}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'portfolioValue') {
+                        return [`${value.toFixed(1)} ${asset}`, 'Portfolio Coins'];
+                      } else if (name === 'benchmarkValue') {
+                        return [`${value.toFixed(1)} ${asset}`, 'Benchmark (Hold)'];
+                      }
+                      return [`${value.toFixed(2)}`, name];
+                    }}
                   />
                   <Area
                     type="monotone"

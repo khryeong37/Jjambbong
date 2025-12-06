@@ -1,103 +1,113 @@
 import { SimulationResult, MarketData, SimulationConfig, NodeData } from '../types';
 
-// This function simulates a single node's trading strategy.
-// It uses the node's properties to create a deterministic "trading signal".
-const simulateSingleNodeStrategy = (node: NodeData, initialCapital: number, marketHistory: { date: string; price: number }[], mode: 'LONG_ONLY' | 'COPY_TRADING') => {
-  let holdings = initialCapital / marketHistory[0].price; // Start by buying with all capital
-  let cash = 0;
-  const valueTimeline = [];
-
-  // Create a deterministic "alpha" or signal generator for this node
-  const nodeSeed = node.id.charCodeAt(5) || 1; // Use a char from the id as a seed
-
-  for (let i = 0; i < marketHistory.length; i++) {
-    const todayPrice = marketHistory[i].price;
-    const yesterdayPrice = i > 0 ? marketHistory[i - 1].price : todayPrice;
-    const priceChange = (todayPrice - yesterdayPrice) / yesterdayPrice;
-
-    // --- Trading Signal Logic ---
-    // A simple deterministic signal based on day index, node's seed, and correlation
-    // This creates a unique but repeatable trading pattern for each node.
-    const signal = Math.sin(i * 0.5 + nodeSeed + (node.correlationScore * 5));
-
-    if (mode === 'COPY_TRADING') {
-      // Buy when signal is strongly positive and price is dipping/stable
-      if (signal > 0.7 && priceChange < 0.01 && cash > 1) {
-        const investment = cash * 0.5; // Invest 50% of cash
-        holdings += investment / todayPrice;
-        cash -= investment;
-      }
-      // Sell when signal is strongly negative and price is rising/stable
-      else if (signal < -0.7 && priceChange > -0.01 && holdings > 0.1) {
-        const divestment = holdings * 0.5; // Sell 50% of holdings
-        cash += divestment * todayPrice;
-        holdings -= divestment;
-      }
-    }
-    // In 'LONG_ONLY' mode, we do nothing but hold.
-
-    const portfolioValue = cash + holdings * todayPrice;
-    valueTimeline.push(portfolioValue);
-  }
-  return valueTimeline;
-};
-
-
+/**
+ * Calculates the backtest simulation result based on coin quantity (not price).
+ * Follows the specification document:
+ * - Initial coin quantity C0 is divided by weights wA, wB, wC
+ * - Each node's trading history is followed to calculate coin quantity changes
+ * - Final coin quantity = sum of all slot final quantities
+ * - Total PnL = Final coins - Initial coins
+ * - ROI = (Total PnL / Initial coins) × 100
+ */
 export const calculateSimulation = (config: SimulationConfig, marketData: MarketData): SimulationResult => {
   const { initialCapital, mode, slots } = config;
-  const history = marketData.history;
   
-  if (!history || history.length === 0 || slots.every(s => !s.node)) {
+  // Validate inputs
+  if (slots.every(s => !s.node)) {
     return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
   }
 
+  // Use marketData.history as the base timeline (it has the date range from filters)
+  if (!marketData.history || marketData.history.length === 0) {
+    return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
+  }
+
+  const timelineLength = marketData.history.length;
+  const dates = marketData.history.map(h => h.date);
+
   // 1. Simulate each slot independently
+  // Each slot gets initial coins = C0 × weight
   const slotTimelines: { [key: string]: number[] } = {};
+  
   slots.forEach(slot => {
     if (slot.node) {
-      const slotInitialCapital = initialCapital * (slot.weight / 100);
-      slotTimelines[slot.id] = simulateSingleNodeStrategy(slot.node, slotInitialCapital, history, mode);
+      // QA0 = C0 × wA (initial coins allocated to this slot)
+      const slotInitialCoins = initialCapital * (slot.weight / 100);
+      
+      // Get node's history and align it with marketData.history dates
+      const nodeHistory = slot.node.history || [];
+      const nodeHistoryMap = new Map(nodeHistory.map(h => [h.date, h]));
+      
+      // Create aligned timeline based on marketData dates
+      const alignedTimeline: number[] = [];
+      let currentCoins = slotInitialCoins;
+      
+      if (mode === 'LONG_ONLY') {
+        // Just hold coins
+        alignedTimeline.push(...new Array(timelineLength).fill(slotInitialCoins));
+      } else {
+        // COPY_TRADING: follow the node's trading pattern
+        for (let i = 0; i < timelineLength; i++) {
+          const date = dates[i];
+          const nodeEntry = nodeHistoryMap.get(date);
+          
+          if (nodeEntry) {
+            // Apply netFlow to change coin quantity
+            const netFlowMultiplier = nodeEntry.netFlow * 0.1; // Scale down to reasonable trading amounts
+            const coinChange = currentCoins * netFlowMultiplier;
+            currentCoins += coinChange;
+            currentCoins = Math.max(0, currentCoins);
+          }
+          
+          alignedTimeline.push(currentCoins);
+        }
+      }
+      
+      slotTimelines[slot.id] = alignedTimeline;
+    } else {
+      // Empty slot: coins remain unchanged
+      const slotInitialCoins = initialCapital * (slot.weight / 100);
+      slotTimelines[slot.id] = new Array(timelineLength).fill(slotInitialCoins);
     }
   });
 
   // 2. Combine results into a final portfolio timeline
+  // Qfinal = QA0 × rA + QB0 × rB + QC0 × rC (sum of all slot coin quantities)
   const portfolioTimeline: { date: string; portfolioValue: number; benchmarkValue: number }[] = [];
-  const initialPrice = history[0].price;
+  
+  // Benchmark: simple buy-and-hold (coins remain unchanged - same as initial)
+  const benchmarkCoins = initialCapital;
 
-  for (let i = 0; i < history.length; i++) {
-    let dailyPortfolioValue = 0;
+  for (let i = 0; i < timelineLength; i++) {
+    let dailyPortfolioCoins = 0;
     
-    // Sum the weighted values from each active slot's simulation
+    // Sum coin quantities from all slots
     slots.forEach(slot => {
-      if (slot.node && slotTimelines[slot.id]) {
-        dailyPortfolioValue += slotTimelines[slot.id][i];
-      } else {
-        // For empty slots, the capital just sits there (value doesn't change)
-        dailyPortfolioValue += initialCapital * (slot.weight / 100);
+      if (slotTimelines[slot.id] && slotTimelines[slot.id][i] !== undefined) {
+        dailyPortfolioCoins += slotTimelines[slot.id][i];
       }
     });
 
+    // Benchmark is also in coin quantity (buy-and-hold = coins stay the same)
     portfolioTimeline.push({
-      date: history[i].date,
-      portfolioValue: dailyPortfolioValue,
-      // Benchmark is a simple buy-and-hold of the initial capital
-      benchmarkValue: (initialCapital / initialPrice) * history[i].price
+      date: dates[i] || `${i}`,
+      portfolioValue: dailyPortfolioCoins, // Coin quantity
+      benchmarkValue: benchmarkCoins // Coin quantity (unchanged in buy-and-hold)
     });
   }
   
   if (portfolioTimeline.length === 0) {
-     return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
+    return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
   }
 
-  // 3. Calculate final metrics
-  const finalValue = portfolioTimeline[portfolioTimeline.length - 1].portfolioValue;
-  const startValue = portfolioTimeline[0].portfolioValue; // Should be very close to initialCapital
-  const totalPnL = finalValue - initialCapital;
-  const roi = (totalPnL / initialCapital) * 100;
+  // 3. Calculate final metrics (all in coin quantity)
+  const finalCoins = portfolioTimeline[portfolioTimeline.length - 1].portfolioValue;
+  const totalPnL = finalCoins - initialCapital; // Coin quantity difference
+  const roi = (totalPnL / initialCapital) * 100; // Percentage
 
   return {
     timeline: portfolioTimeline,
-    finalValue,
+    finalValue: finalCoins, // Final coin quantity
     roi,
     totalPnL
   };
