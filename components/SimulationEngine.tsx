@@ -486,9 +486,11 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [isDragging, h1, h2]);
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex relative" style={{
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex relative overflow-hidden" style={{
       boxShadow: 'none',
       border: '1px solid rgba(255, 255, 255, 0.1)',
+      isolation: 'isolate',
+      borderRadius: '32px',
       ...(isDark ? {
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
       } : {})

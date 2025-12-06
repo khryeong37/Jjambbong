@@ -95,7 +95,7 @@ export default function App() {
     <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-gray-300 dark:bg-black`}>
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
-      <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>
+      <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`} style={{ padding: '8px', margin: '-8px' }}>
          <FilterPanel 
             tempFilters={tempFilters} 
             setTempFilters={setTempFilters}
@@ -150,8 +150,8 @@ export default function App() {
             height: 'clamp(380px, 35vh, 480px)',
             minHeight: '380px',
             maxHeight: '480px',
-            padding: '20px', 
-            margin: '-20px', 
+            padding: '8px', 
+            margin: '-8px', 
             marginTop: '0'
           }}>
              <div className="h-full">

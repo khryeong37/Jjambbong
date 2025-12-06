@@ -127,7 +127,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
   };
 
   return (
-    <div className="h-full flex flex-col glass-card-light dark:glass-card-dark rounded-[32px] overflow-hidden relative">
+    <div className="h-full flex flex-col glass-card-light dark:glass-card-dark rounded-[32px] relative overflow-hidden" style={{ boxShadow: 'none', border: '1px solid rgba(255, 255, 255, 0.1)', isolation: 'isolate' }}>
       
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/20 dark:border-white/10 flex items-center justify-between relative backdrop-blur-sm" style={{
