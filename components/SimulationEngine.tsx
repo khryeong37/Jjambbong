@@ -134,9 +134,11 @@ const NoiseMolecule: React.FC<{ disabled?: boolean }> = ({ disabled }) => {
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
+      antialias: false, // Disabled for better performance
+      powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    // Limit pixel ratio to 1 for better performance on high-DPI displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(
       container.clientWidth || 112,
       container.clientHeight || 112
@@ -148,7 +150,7 @@ const NoiseMolecule: React.FC<{ disabled?: boolean }> = ({ disabled }) => {
       geometry!: THREE.BufferGeometry;
       mesh!: THREE.Points;
       radius = 1.5;
-      detail = 40;
+      detail = 20; // Reduced from 40 for better performance
       particleSizeMin = 0.01;
       particleSizeMax = 0.08;
 
@@ -250,9 +252,18 @@ ${shader.vertexShader}
     scene.add(molecule);
 
     let animationFrameId: number;
+    let lastFrameTime = 0;
+    const targetFPS = 30; // Limit to 30 FPS for better performance
+    const frameInterval = 1000 / targetFPS;
 
     const animate = (time: number) => {
       animationFrameId = requestAnimationFrame(animate);
+      
+      // Throttle to target FPS
+      const elapsed = time - lastFrameTime;
+      if (elapsed < frameInterval) return;
+      lastFrameTime = time - (elapsed % frameInterval);
+      
       const t = time * 0.001;
       molecule.animate(t);
       renderer.render(scene, camera);
