@@ -316,6 +316,31 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   slots,
   setSlots,
 }) => {
+  const [isDark, setIsDark] = useState(false);
+  
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkMode);
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(() => {
+      checkDarkMode();
+    });
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'],
+      subtree: false
+    });
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = () => checkDarkMode();
+    mediaQuery.addEventListener('change', handleMediaChange);
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    };
+  }, []);
+
   // Config State
   const [capital, setCapital] = useState<number>(100);
   const [strategyMode, setStrategyMode] =
@@ -540,79 +565,121 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
             <div className="w-full h-full relative">
               <div
                 ref={sliderRef}
-                className="w-3 h-full bg-gray-100 dark:bg-white/5 rounded-full relative shadow-inner overflow-visible mx-auto"
+                className="w-4 h-full rounded-full relative overflow-visible mx-auto"
+                style={{
+                  background: 'linear-gradient(to bottom, #f3f4f6, #e5e7eb)',
+                  border: '1px solid rgba(209, 213, 219, 0.4)',
+                  boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)',
+                }}
               >
                 {/* Segments - 노드의 bias에 따라 색상 변경, 노드가 없으면 무채색 */}
                 <div
-                  className="absolute top-0 w-full rounded-t-full transition-all duration-100"
+                  className="absolute top-0 w-full rounded-t-full transition-all duration-200"
                   style={{ 
                     height: `${100 - h2}%`,
-                    backgroundColor: slots[0].node 
+                    background: slots[0].node 
                       ? slots[0].node.bias === 'ATOM' 
-                        ? '#EF4444' 
+                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
                         : slots[0].node.bias === 'ATOMONE' 
-                        ? '#3B82F6' 
-                        : '#A855F7'
-                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        : 'linear-gradient(to bottom, #a855f7, #9333ea)'
+                      : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
                 <div
-                  className="absolute w-full transition-all duration-100"
+                  className="absolute w-full transition-all duration-200"
                   style={{ 
                     bottom: `${h1}%`, 
                     height: `${h2 - h1}%`,
-                    backgroundColor: slots[1].node 
+                    background: slots[1].node 
                       ? slots[1].node.bias === 'ATOM' 
-                        ? '#EF4444' 
+                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
                         : slots[1].node.bias === 'ATOMONE' 
-                        ? '#3B82F6' 
-                        : '#A855F7'
-                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        : 'linear-gradient(to bottom, #a855f7, #9333ea)'
+                      : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
                 <div
-                  className="absolute bottom-0 w-full rounded-b-full transition-all duration-100"
+                  className="absolute bottom-0 w-full rounded-b-full transition-all duration-200"
                   style={{ 
                     height: `${h1}%`,
-                    backgroundColor: slots[2].node 
+                    background: slots[2].node 
                       ? slots[2].node.bias === 'ATOM' 
-                        ? '#EF4444' 
+                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
                         : slots[2].node.bias === 'ATOMONE' 
-                        ? '#3B82F6' 
-                        : '#A855F7'
-                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        : 'linear-gradient(to bottom, #a855f7, #9333ea)'
+                      : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
 
                 {/* Handles */}
                 <div
                   onMouseDown={handleMouseDown('h2')}
-                  className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
+                  className={`absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center cursor-row-resize transition-all ${
                     isDragging === 'h2'
-                      ? 'scale-110 ring-2 ring-purple-400 ring-offset-2 ring-offset-aether-dark-card'
-                      : ''
+                      ? 'scale-110'
+                      : 'hover:scale-105'
                   }`}
                   style={{
                     bottom: `${h2}%`,
                     transform: 'translate(-50%, 50%)',
+                    width: '2rem',
+                    height: '1.5rem',
                   }}
                 >
-                  <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '0.5rem',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
+                      border: isDragging === 'h2' ? '3px solid #a78bfa' : '2px solid rgba(196, 181, 253, 0.6)',
+                      boxShadow: isDragging === 'h2'
+                        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                        : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                      transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    }}
+                    className="flex items-center justify-center"
+                  >
+                    <div className="w-4 h-0.5 bg-purple-400 rounded-full" />
+                  </div>
                 </div>
 
                 <div
                   onMouseDown={handleMouseDown('h1')}
-                  className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
+                  className={`absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center cursor-row-resize transition-all ${
                     isDragging === 'h1'
-                      ? 'scale-110 ring-2 ring-blue-400 ring-offset-2 ring-offset-aether-dark-card'
-                      : ''
+                      ? 'scale-110'
+                      : 'hover:scale-105'
                   }`}
                   style={{
                     bottom: `${h1}%`,
                     transform: 'translate(-50%, 50%)',
+                    width: '2rem',
+                    height: '1.5rem',
                   }}
                 >
-                  <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '0.5rem',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
+                      border: isDragging === 'h1' ? '3px solid #a78bfa' : '2px solid rgba(196, 181, 253, 0.6)',
+                      boxShadow: isDragging === 'h1'
+                        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                        : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                      transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    }}
+                    className="flex items-center justify-center"
+                  >
+                    <div className="w-4 h-0.5 bg-purple-400 rounded-full" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -650,14 +717,14 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                             : slot.node.bias === 'ATOMONE' 
                             ? '#3B82F6' 
                             : '#A855F7'
-                          : '#9CA3AF', // 노드가 없으면 무채색 (회색)
+                          : '#d1d5db', // 노드가 없으면 무채색 (회색)
                         borderColor: slot.node 
                           ? slot.node.bias === 'ATOM' 
                             ? '#EF4444' 
                             : slot.node.bias === 'ATOMONE' 
                             ? '#3B82F6' 
                             : '#A855F7'
-                          : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                          : '#d1d5db' // 노드가 없으면 무채색 (회색)
                       }}
                     >
                       {slotLabels[originalIndex]}

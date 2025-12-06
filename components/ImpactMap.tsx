@@ -7,6 +7,7 @@ import {
   Plus,
   Minus,
   Maximize2,
+  HelpCircle,
 } from 'lucide-react';
 
 interface ImpactMapProps {
@@ -74,6 +75,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 }) => {
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 });
   const [isPanning, setIsPanning] = useState(false);
+  const [showBiasLegend, setShowBiasLegend] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const wasDragged = useRef(false);
@@ -319,7 +321,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           isPanning ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
+          background: 'transparent',
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -338,6 +340,36 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext pointer-events-none">
           Total Volume (거래 규모, log) →
         </div>
+
+        {/* Color Legend Toggle Button */}
+        <button
+          onClick={() => setShowBiasLegend(!showBiasLegend)}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 dark:border-white/10 hover:bg-white dark:hover:bg-slate-900 transition-all z-20"
+          aria-label="Toggle bias legend"
+        >
+          <HelpCircle size={16} className="text-gray-600 dark:text-gray-400" />
+        </button>
+
+        {/* Color Legend */}
+        {showBiasLegend && (
+          <div className="absolute top-14 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-white/20 dark:border-white/10 z-20 animate-in slide-in-from-top-2 duration-200">
+            <div className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Node Bias</div>
+            <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">ATOM</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-sky-400"></div>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">ATOMONE</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">Mixed</span>
+            </div>
+            </div>
+          </div>
+        )}
 
         {loading && (
           <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-30">
@@ -373,8 +405,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
               ))}
             </div>
 
-            {/* Subtle vignette */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/5 dark:to-black/20 pointer-events-none"></div>
 
             {/* Nodes */}
             {processedNodes.renderableNodes.map((node: any) => {
@@ -383,6 +413,16 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 
               // Proximity effect removed for performance
               const finalScale = ((isSelected ? 1.2 : 1) / view.zoom);
+              
+              // Memoize style calculations
+              const nodeStyle = {
+                left: `${node.xPercent}%`,
+                bottom: `${node.yPercent}%`,
+                width: `${node.size}px`,
+                height: `${node.size}px`,
+                transform: `translate(-50%, 50%) scale(${finalScale})`,
+                willChange: isSelected || isActive ? 'transform, opacity' : 'auto',
+              };
 
               return (
                 <div
@@ -391,46 +431,48 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
                     isActive ? 'cursor-pointer hover:!z-20' : 'pointer-events-none'
                   } ${isSelected ? 'z-10' : 'z-0'}`}
                   style={{
-                    left: `${node.xPercent}%`,
-                    bottom: `${node.yPercent}%`,
-                    width: `${node.size}px`,
-                    height: `${node.size}px`,
-                    transform: `translate(-50%, 50%) scale(${finalScale})`,
+                    ...nodeStyle,
+                    opacity: 0.6,
+                    mixBlendMode: 'screen',
                   }}
                   onClick={() => {
                     if (wasDragged.current || !isActive) return;
                     onSelectNode(isSelected ? null : node);
                   }}
                 >
-                  {/* 기본 코어 (홀로그램 제거, 심플한 색/링만 유지) */}
+                  {/* 메인 노드 배경 */}
                   <div
                     className={`
-                      w-full h-full rounded-full transition-all duration-300
+                      relative w-full h-full rounded-full transition-all duration-300
                       ${
                         isActive
                           ? node.bias === 'ATOM'
-                            ? 'bg-aether-atom'
+                            ? 'bg-orange-500'
                             : node.bias === 'ATOMONE'
-                            ? 'bg-aether-one'
-                            : 'bg-aether-mixed'
+                            ? 'bg-sky-400'
+                            : 'bg-purple-500'
                           : 'bg-gray-300 dark:bg-gray-700'
                       }
-                      ${isActive ? 'opacity-80' : 'opacity-30'}
+                      opacity-80
                       ${
                         isSelected
-                          ? `ring-4 ring-white/80 dark:ring-white/50 ${
+                          ? `ring-4 ring-white/90 dark:ring-white/60 ${
                               node.bias === 'ATOM'
-                                ? 'ring-offset-aether-atom'
+                                ? 'ring-offset-orange-500/50'
                                 : node.bias === 'ATOMONE'
-                                ? 'ring-offset-aether-one'
-                                : 'ring-offset-aether-mixed'
-                            } ring-offset-2 shadow-lg`
+                                ? 'ring-offset-sky-500/50'
+                                : 'ring-offset-purple-500/50'
+                            } ring-offset-2 shadow-2xl`
                           : isActive
-                          ? 'ring-1 ring-black/5 dark:ring-white/20 shadow-md'
+                          ? 'ring-2 ring-white/30 dark:ring-white/20 shadow-lg hover:ring-4 hover:ring-white/50 dark:hover:ring-white/30'
                           : ''
                       }
                     `}
-                  />
+                    style={{
+                      boxShadow: 'none',
+                    }}
+                  >
+                  </div>
 
                   {/* Tooltip */}
                   {isActive && (

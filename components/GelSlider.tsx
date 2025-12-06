@@ -12,29 +12,47 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   const sliderRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<'min' | 'max' | 'single' | null>(null);
   const [isDark, setIsDark] = useState(false);
-  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [hoveredHandle, setHoveredHandle] = useState<'min' | 'max' | 'single' | null>(null);
-  const rippleIdRef = useRef(0);
+  const lastUpdateRef = useRef<number>(0);
+  const rafRef = useRef<number | null>(null);
 
   const getPercentage = useCallback((val: number) => ((val - min) / (max - min)) * 100, [min, max]);
 
-  const createRipple = (x: number, y: number) => {
-    const id = rippleIdRef.current++;
-    setRipples(prev => [...prev, { id, x, y }]);
-    setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== id));
-    }, 600);
-  };
-
-  const handleInteraction = (clientX: number, clientY?: number) => {
+  const handleInteraction = useCallback((clientX: number) => {
     if (!dragging || !sliderRef.current) return;
     const rect = sliderRef.current.getBoundingClientRect();
     if (rect.width === 0) return;
+    
     const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-    const step = (max - min) > 10 ? 1 : 0.1; // Smaller step for ranges like -1 to 1
+    const step = (max - min) > 10 ? 1 : 0.1;
     const rawValue = min + (percent / 100) * (max - min);
     const newValue = Math.round(rawValue / step) * step;
 
+    // Throttle updates to 60fps
+    const now = performance.now();
+    if (now - lastUpdateRef.current < 16) {
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null;
+          lastUpdateRef.current = performance.now();
+          
+          if (isDual && Array.isArray(value)) {
+            const [currentMin, currentMax] = value;
+            if (dragging === 'min') {
+              onChange([Math.min(newValue, currentMax), currentMax]);
+            } else {
+              onChange([currentMin, Math.max(newValue, currentMin)]);
+            }
+          } else {
+            onChange(newValue);
+          }
+        });
+      }
+      return;
+    }
+    
+    lastUpdateRef.current = now;
+    
     if (isDual && Array.isArray(value)) {
       const [currentMin, currentMax] = value;
       if (dragging === 'min') {
@@ -45,37 +63,36 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     } else {
       onChange(newValue);
     }
-  };
+  }, [dragging, min, max, isDual, value, onChange]);
   
-  const handleMouseUp = () => setDragging(null);
-  const handleMouseMove = (e: MouseEvent) => handleInteraction(e.clientX, e.clientY);
-  const handleTouchMove = (e: TouchEvent) => handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
-  
-  const handleMouseDown = (type: 'min' | 'max' | 'single', e: React.MouseEvent) => {
-    if (sliderRef.current) {
-      const rect = sliderRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = 50; // Center of slider
-      createRipple(x, y);
+  const handleMouseUp = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
-    setDragging(type);
-  };
+    setDragging(null);
+  }, []);
   
-  const handleTouchStart = (type: 'min' | 'max' | 'single', e: React.TouchEvent) => {
-    if (sliderRef.current && e.touches[0]) {
-      const rect = sliderRef.current.getBoundingClientRect();
-      const x = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
-      const y = 50;
-      createRipple(x, y);
-    }
+  const handleMouseMove = useCallback((e: MouseEvent) => handleInteraction(e.clientX), [handleInteraction]);
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches[0]) handleInteraction(e.touches[0].clientX);
+  }, [handleInteraction]);
+  
+  const handleMouseDown = useCallback((type: 'min' | 'max' | 'single', e: React.MouseEvent) => {
+    e.preventDefault();
     setDragging(type);
-  };
+  }, []);
+  
+  const handleTouchStart = useCallback((type: 'min' | 'max' | 'single', e: React.TouchEvent) => {
+    e.preventDefault();
+    setDragging(type);
+  }, []);
 
   useEffect(() => {
     if (dragging) {
-      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleMouseMove, { passive: false });
       window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
       window.addEventListener('touchend', handleMouseUp);
     }
     return () => {
@@ -83,9 +100,12 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleMouseUp);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragging]);
+  }, [dragging, handleMouseMove, handleMouseUp, handleTouchMove]);
 
   useEffect(() => {
     const checkDarkMode = () => {
@@ -119,14 +139,17 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     position: 'relative',
     width: '100%',
     padding: '0',
-    height: '0.5em',
+    height: '0.6em',
     borderRadius: '99vw',
     background: isDark 
-      ? '#1e293b'
-      : '#e5e7eb',
+      ? 'linear-gradient(to bottom, #1e293b, #0f172a)'
+      : 'linear-gradient(to bottom, #f3f4f6, #e5e7eb)',
     border: isDark 
-      ? '1px solid rgba(148, 163, 184, 0.2)'
-      : '1px solid rgba(209, 213, 219, 0.5)',
+      ? '1px solid rgba(148, 163, 184, 0.15)'
+      : '1px solid rgba(209, 213, 219, 0.4)',
+    boxShadow: isDark
+      ? 'inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1)'
+      : 'inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)',
     overflow: 'visible'
   } as React.CSSProperties;
 
@@ -152,16 +175,17 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: dragging 
-      ? 'linear-gradient(90deg, #c4b5fd 0%, #a78bfa 50%, #c4b5fd 100%)'
-      : '#c4b5fd',
+      ? 'linear-gradient(90deg, #c4b5fd 0%, #a78bfa 30%, #9333ea 50%, #a78bfa 70%, #c4b5fd 100%)'
+      : 'linear-gradient(to bottom, #c4b5fd, #a78bfa)',
     backgroundSize: dragging ? '200% 100%' : '100% 100%',
     backgroundPosition: dragging ? '0% 0%' : '0% 0%',
     border: 'none',
-    boxShadow: dragging 
-      ? '0 0 12px rgba(196, 181, 253, 0.6), 0 0 24px rgba(196, 181, 253, 0.3)'
-      : 'none',
-    transition: dragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: dragging
+      ? '0 0 16px rgba(196, 181, 253, 0.5), 0 0 32px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+      : '0 2px 8px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+    transition: dragging ? 'none' : 'left 0.15s cubic-bezier(0.4, 0, 0.2, 1), width 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
     animation: dragging ? 'shimmer 1.5s ease-in-out infinite' : 'none',
+    willChange: dragging ? 'left, width, background-position' : 'auto',
   } as React.CSSProperties;
 
   const rangeBarBeforeStyle: React.CSSProperties = {
@@ -178,11 +202,12 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   };
 
   const handleStyle: React.CSSProperties = {
-    width: '1.1em', height: '1.1em',
+    width: '1.3em', height: '1.3em',
     position: 'absolute', top: '50%',
     transform: 'translate(-50%, -50%)',
     cursor: 'pointer', zIndex: 10,
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: dragging ? 'none' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    willChange: dragging ? 'transform, left' : 'auto',
   };
 
   // Enhanced knob style with interactive effects
@@ -197,20 +222,21 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
       height: '100%', 
       borderRadius: '50%',
       background: isActive 
-        ? 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)'
-        : '#ffffff',
+        ? 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)'
+        : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
       border: isActive
-        ? '2px solid #c4b5fd'
+        ? '3px solid #a78bfa'
         : isDark 
-          ? '1px solid rgba(148, 163, 184, 0.3)'
-          : '1px solid rgba(209, 213, 219, 0.8)',
+          ? '2px solid rgba(148, 163, 184, 0.4)'
+          : '2px solid rgba(196, 181, 253, 0.6)',
       boxShadow: isActive
-        ? '0 0 16px rgba(196, 181, 253, 0.8), 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(196, 181, 253, 0.3)'
+        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
         : isDark
-          ? '0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)'
-          : '0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1)',
-      transform: isActive ? 'scale(1.15)' : 'scale(1)',
-      transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          ? '0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+      transform: isActive ? 'scale(1.2)' : 'scale(1)',
+      transition: dragging ? 'none' : 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      willChange: dragging || isActive ? 'transform' : 'auto',
     };
     return baseStyle;
   };
@@ -226,16 +252,6 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
             background-position: 200% 0; 
           }
         }
-        @keyframes ripple {
-          0% {
-            transform: translate(-50%, -50%) scale(0);
-            opacity: 0.8;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(3);
-            opacity: 0;
-          }
-        }
       `}</style>
       <div style={containerStyle} className="transition-all duration-300">
         <div style={sliderBaseStyle} ref={sliderRef}>
@@ -243,26 +259,6 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
             <div style={rangeBarBeforeStyle}></div>
             <div style={rangeBarAfterStyle}></div>
           </div>
-          
-          {/* Ripple effects */}
-          {ripples.map(ripple => (
-            <div
-              key={ripple.id}
-              style={{
-                position: 'absolute',
-                left: `${ripple.x}%`,
-                top: `${ripple.y}%`,
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(196, 181, 253, 0.7) 0%, rgba(196, 181, 253, 0.3) 50%, transparent 100%)',
-                transform: 'translate(-50%, -50%)',
-                pointerEvents: 'none',
-                zIndex: 20,
-                animation: 'ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-            />
-          ))}
           
           {isDual && Array.isArray(value) ? (
             <>

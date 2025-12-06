@@ -93,7 +93,7 @@ export default function App() {
   }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
 
   return (
-    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-slate-50 dark:bg-slate-900`}>
+    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-gray-200 dark:bg-black`}>
       <AuroraBackground />
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
