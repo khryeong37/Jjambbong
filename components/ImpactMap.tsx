@@ -273,8 +273,20 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     return { renderableNodes: limitedNodes, activeCount: activeNodes.length };
   }, [nodes, filters]);
 
+  const isDark = document.documentElement.classList.contains('dark');
+  
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ height: '100%', maxHeight: '100%', borderRadius: '32px', isolation: 'isolate' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ 
+      height: '100%', 
+      maxHeight: '100%', 
+      borderRadius: '32px', 
+      isolation: 'isolate',
+      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      ...(isDark ? {
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+      } : {})
+    }}>
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm">

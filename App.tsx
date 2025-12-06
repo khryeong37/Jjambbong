@@ -92,7 +92,7 @@ export default function App() {
   }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
 
   return (
-    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-slate-100 dark:bg-slate-950`}>
+    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-gray-300 dark:bg-black`}>
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
       <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>
@@ -121,10 +121,10 @@ export default function App() {
           </div>
           
           {/* TOP ROW: MAP & INTELLIGENCE - 버블차트 우선 */}
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden" style={{ padding: '16px', margin: '-16px' }}>
+          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ padding: '20px', margin: '-20px' }}>
              
              {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0 overflow-hidden" style={{ minHeight: '300px' }}>
+             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ minHeight: '300px' }}>
                 <ImpactMap 
                   nodes={nodes} 
                   selectedNode={selectedNode} 
@@ -136,7 +136,7 @@ export default function App() {
              </div>
 
              {/* Node Intelligence - 작은 화면에서는 세로로 배치되지만 Impact Map이 우선 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0 overflow-hidden">
+             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0">
                 <NodeIntelligence 
                   selectedNode={selectedNode}
                   slots={slots}
@@ -146,12 +146,12 @@ export default function App() {
           </div>
 
           {/* BOTTOM ROW: SIMULATION ENGINE - 작은 화면에서 높이 축소, 버블차트 우선 */}
-          <div className="w-full flex-shrink-0 overflow-hidden" style={{ 
+          <div className="w-full flex-shrink-0" style={{ 
             height: 'clamp(380px, 35vh, 480px)',
             minHeight: '380px',
             maxHeight: '480px',
-            padding: '12px', 
-            margin: '-12px', 
+            padding: '20px', 
+            margin: '-20px', 
             marginTop: '0'
           }}>
              <div className="h-full">

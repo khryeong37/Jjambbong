@@ -83,7 +83,13 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
 
   if (!selectedNode) {
     return (
-      <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center">
+      <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] p-6 flex flex-col items-center justify-center text-center" style={{
+        boxShadow: 'none',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        ...(isDark ? {
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+        } : {})
+      }}>
          <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-6 shadow-inner border border-gray-100 dark:border-white/5">
             <Layers size={32} className="text-gray-300 dark:text-gray-200" />
          </div>
@@ -100,7 +106,17 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div key={animationKey} className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative" style={{ height: '100%', maxHeight: '100%', borderRadius: '32px', isolation: 'isolate' }}>
+    <div key={animationKey} className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative" style={{ 
+      height: '100%', 
+      maxHeight: '100%', 
+      borderRadius: '32px', 
+      isolation: 'isolate',
+      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      ...(isDark ? {
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+      } : {})
+    }}>
       {/* Header */}
       <div 
         className="px-6 py-5 border-b border-white/20 dark:border-white/10 flex-shrink-0 relative node-intel-animate"

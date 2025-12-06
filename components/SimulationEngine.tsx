@@ -486,7 +486,13 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [isDragging, h1, h2]);
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex overflow-hidden relative">
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex relative" style={{
+      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      ...(isDark ? {
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+      } : {})
+    }}>
       {/* LEFT PANEL: Controls & Allocation */}
       <div className="w-[42%] border-r border-white/20 dark:border-white/10 flex flex-col overflow-hidden relative" style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
