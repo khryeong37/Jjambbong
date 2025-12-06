@@ -79,7 +79,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col overflow-hidden relative" style={{ height: '100%', maxHeight: '100%' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative" style={{ height: '100%', maxHeight: '100%', borderRadius: '32px', isolation: 'isolate' }}>
       {/* Header */}
       <div className="px-6 py-5 border-b border-white/20 dark:border-white/10 flex-shrink-0 relative" style={{
         background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
@@ -102,7 +102,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" style={{ minHeight: 0, maxHeight: '100%' }}>
+      <div className="flex-1 overflow-y-auto space-y-6 custom-scrollbar" style={{ minHeight: 0, maxHeight: '100%', padding: '1.5rem', paddingRight: '1.5rem', marginRight: '0' }}>
         
         {/* 1. Price & Net Flow Chart */}
         <div className="space-y-3">

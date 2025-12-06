@@ -274,7 +274,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative overflow-hidden" style={{ height: '100%', maxHeight: '100%' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ height: '100%', maxHeight: '100%', borderRadius: '32px', isolation: 'isolate' }}>
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm">
@@ -464,7 +464,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         </div>
 
         {/* Zoom controls */}
-        <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 z-20">
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 z-20" style={{ pointerEvents: 'auto' }}>
           <button
             onClick={zoomIn}
             aria-label="Zoom In"
