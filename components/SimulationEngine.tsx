@@ -414,14 +414,23 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [isDragging, h1, h2]);
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex overflow-visible">
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex overflow-visible relative">
       {/* LEFT PANEL: Controls & Allocation */}
-      <div className="w-[42%] border-r border-gray-50 dark:border-white/5 flex flex-col bg-gray-50/50 dark:bg-white/5 overflow-visible">
+      <div className="w-[42%] border-r border-white/20 dark:border-white/10 flex flex-col overflow-visible relative" style={{
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)'
+      }}>
         {/* Top: Strategy Settings */}
-        <div className="p-4 border-b border-gray-50 dark:border-white/5 shrink-0 space-y-3">
+        <div className="px-5 py-4 border-b border-white/20 dark:border-white/10 shrink-0 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="bg-white dark:bg-aether-dark-card p-1.5 rounded-lg shadow-sm">
+              <div className="p-1.5 rounded-lg glass-button" style={{
+                background: 'rgba(255, 255, 255, 0.3)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.4)'
+              }}>
                 <Settings2
                   size={14}
                   className="text-gray-400 dark:text-aether-dark-subtext"
@@ -431,14 +440,22 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 Config
               </h2>
             </div>
-            <div className="flex bg-white dark:bg-aether-dark-bg border border-gray-100 dark:border-white/10 p-1 rounded-xl shadow-sm">
+            <div className="flex glass-input p-1 rounded-xl">
               <button
                 onClick={() => setStrategyMode('LONG_ONLY')}
-                className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all duration-300 ${
+                className={`px-3 py-1.5 rounded-lg text-[9px] font-bold glass-button transition-all duration-300 ${
                   strategyMode === 'LONG_ONLY'
-                    ? 'bg-gray-900 dark:bg-aether-dark-text text-white dark:text-aether-dark-bg shadow-md'
-                    : 'text-gray-400 dark:text-aether-dark-subtext hover:text-gray-600 dark:hover:text-aether-dark-text'
+                    ? 'text-white dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
+                style={strategyMode === 'LONG_ONLY' ? {
+                  background: 'linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.2)'
+                } : {
+                  background: 'transparent'
+                }}
               >
                 BUY ONLY
               </button>

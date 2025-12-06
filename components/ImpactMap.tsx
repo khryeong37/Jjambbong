@@ -272,8 +272,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 p-6 flex flex-col relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
+      <div className="flex items-center justify-between mb-5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm">
             <Zap size={14} className="text-indigo-500 dark:text-indigo-400" />
@@ -315,9 +315,16 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 
       <div
         ref={mapRef}
-        className={`flex-1 bg-gray-50/50 dark:bg-black/20 rounded-2xl relative overflow-hidden border border-gray-100/80 dark:border-white/5 shadow-inner ${
+        className={`flex-1 rounded-2xl relative overflow-hidden ${
           isPanning ? 'cursor-grabbing' : 'cursor-grab'
         }`}
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
+          backdropFilter: 'blur(16px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06), inset 0 -2px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08)'
+        }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

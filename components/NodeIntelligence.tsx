@@ -79,9 +79,13 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex flex-col overflow-hidden" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col overflow-hidden relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-50 dark:border-white/5 flex-shrink-0 bg-white/50 dark:bg-transparent backdrop-blur-sm">
+      <div className="px-6 py-5 border-b border-white/20 dark:border-white/10 flex-shrink-0 relative" style={{
+        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)'
+      }}>
         <div className="flex items-center gap-2 mb-2">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm"><Layers size={12} className="text-indigo-500 dark:text-indigo-400" /></div>
           <h2 className="text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-widest">Node Intelligence</h2>
@@ -98,7 +102,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
         
         {/* 1. Price & Net Flow Chart */}
         <div className="space-y-3">
@@ -106,7 +110,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
              <span className="text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-wider">Price vs Net Flow</span>
              <div className="bg-gray-50 dark:bg-white/5 p-1 rounded"><TrendingUp size={12} className="text-gray-400 dark:text-aether-dark-subtext" /></div>
            </div>
-           <div className="h-40 bg-white dark:bg-aether-dark-bg/50 rounded-2xl border border-gray-50 dark:border-white/5 p-4 shadow-sm relative overflow-hidden">
+           <div className="h-40 rounded-2xl p-4 relative overflow-hidden glass-input">
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/50 dark:to-black/20 pointer-events-none"></div>
               <ResponsiveContainer width="100%" height="100%">
                  <ComposedChart data={selectedNode.history}>

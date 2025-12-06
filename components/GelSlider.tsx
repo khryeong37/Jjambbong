@@ -83,20 +83,29 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
   const rangeStart = isDual && Array.isArray(value) ? getPercentage(value[0]) : 0;
   const rangeEnd = isDual && Array.isArray(value) ? getPercentage(value[1]) : getPercentage(value as number);
 
-  // Removed hardcoded background for container style, moved to className
+  // Clean container style
   const containerStyle: React.CSSProperties = {
     '--range-handle-border': 'oklch(0.3 0.01 212 / 0.5)',
     position: 'relative',
     width: '100%',
-    padding: '0.15em',
+    padding: '0',
+    height: '0.5em',
     borderRadius: '99vw',
+    background: isDark 
+      ? '#1e293b'
+      : '#e5e7eb',
+    border: isDark 
+      ? '1px solid rgba(148, 163, 184, 0.2)'
+      : '1px solid rgba(209, 213, 219, 0.5)',
+    overflow: 'visible'
   } as React.CSSProperties;
 
   const sliderBaseStyle: React.CSSProperties = {
     position: 'relative',
-    height: '0.5em',
+    height: '100%',
     margin: '0',
     background: 'transparent',
+    width: '100%'
   };
   
   // Dynamic border radius: round left if not at start, round right if not at end
@@ -112,47 +121,49 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     position: 'absolute',
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
-    boxShadow: 'inset 0 0px 0px 0.3px oklch(0 0 0 / 0.2)',
-    background: 'transparent'
+    background: isDark
+      ? '#94a3b8'
+      : '#9ca3af',
+    border: 'none',
+    boxShadow: 'none'
   } as React.CSSProperties;
 
   const rangeBarBeforeStyle: React.CSSProperties = {
-    content: '""', position: 'absolute', inset: '0.2em', zIndex: -2,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)', // Emerald color
+    content: '""', position: 'absolute', inset: '0', zIndex: -2,
+    background: 'transparent',
     borderRadius: borderRadius,
-    opacity: 'calc((var(--range-size) / 100 + 0.4) * 0.6)',
     transition: 'all 0.2s'
   };
   
   const rangeBarAfterStyle: React.CSSProperties = {
     content: '""', position: 'absolute', inset: '0em',
-    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.45) 0% 100%)',
-    boxShadow: 'inset 0 0 0.4em rgba(255, 255, 255, 0.2), inset 0.5px 0px 0px 0px oklch(0 0 0 / 0.2), inset -0.5px 0px 0px 0px oklch(0 0 0 / 0.2), inset 0 0.5px 0px 0px oklch(1 0 0 / 0.6), inset 0 -0.5px 0px 0px oklch(1 0 0 / 0.6)',
+    background: 'transparent',
     borderRadius: borderRadius,
   };
 
   const handleStyle: React.CSSProperties = {
     width: '1.1em', height: '1.1em',
     position: 'absolute', top: '50%',
-    transform: 'translateY(-50%)',
+    transform: 'translate(-50%, -50%)',
     cursor: 'pointer', zIndex: 10,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
-  // 라이트 모드: 매우 어두운 검정색, 다크 모드: 매우 밝은 흰색
+  // Clean knob style - 하얀색 단순 스타일
   const nubStyle: React.CSSProperties = isDark ? {
     width: '100%', height: '100%', borderRadius: '50%',
-    backgroundImage: 'linear-gradient(to bottom, #ffffff, #f0f0f0)',
-    boxShadow: 'inset 0 0 1em rgba(255, 255, 255, 0.4), inset 0 0 0.2em rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4) 0px 0.15em 0.2em -0.5px, rgba(255, 255, 255, 0.3) 0px 0.08em 0.15em -0.5px',
-    border: 'solid 0.15em #e0e0e0',
+    background: '#ffffff',
+    border: '1px solid rgba(148, 163, 184, 0.3)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
   } : {
     width: '100%', height: '100%', borderRadius: '50%',
-    backgroundImage: 'linear-gradient(to bottom, #0a0a0a, #1a1a1a)',
-    boxShadow: 'inset 0 0 1em rgba(0, 0, 0, 0.6), inset 0 0 0.2em rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4) 0px 0.15em 0.2em -0.5px, rgba(0, 0, 0, 0.3) 0px 0.08em 0.15em -0.5px',
-    border: 'solid 0.15em #000000',
+    background: '#ffffff',
+    border: '1px solid rgba(209, 213, 219, 0.8)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1)',
   };
 
   return (
-    <div style={containerStyle} className="bg-[hsl(212,22%,92%)] dark:bg-black/40 transition-colors duration-300">
+    <div style={containerStyle} className="transition-all duration-300">
       <div style={sliderBaseStyle} ref={sliderRef}>
         <div style={rangeBarStyle}>
           <div style={rangeBarBeforeStyle}></div>
@@ -160,16 +171,31 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
         </div>
         {isDual && Array.isArray(value) ? (
           <>
-            <div style={{ ...handleStyle, left: `${rangeStart}%`, transform: 'translate(-50%, -50%)' }} onMouseDown={() => setDragging('min')} onTouchStart={() => setDragging('min')}>
-              <div style={nubStyle}></div>
+            <div 
+              style={{ ...handleStyle, left: `${rangeStart}%`, transform: 'translate(-50%, -50%)' }} 
+              onMouseDown={() => setDragging('min')} 
+              onTouchStart={() => setDragging('min')}
+              className="group"
+            >
+              <div style={nubStyle} className="transition-all duration-200 group-hover:scale-110 group-active:scale-95"></div>
             </div>
-            <div style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} onMouseDown={() => setDragging('max')} onTouchStart={() => setDragging('max')}>
-              <div style={nubStyle}></div>
+            <div 
+              style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} 
+              onMouseDown={() => setDragging('max')} 
+              onTouchStart={() => setDragging('max')}
+              className="group"
+            >
+              <div style={nubStyle} className="transition-all duration-200 group-hover:scale-110 group-active:scale-95"></div>
             </div>
           </>
         ) : (
-          <div style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} onMouseDown={() => setDragging('single')} onTouchStart={() => setDragging('single')}>
-            <div style={nubStyle}></div>
+          <div 
+            style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} 
+            onMouseDown={() => setDragging('single')} 
+            onTouchStart={() => setDragging('single')}
+            className="group"
+          >
+            <div style={nubStyle} className="transition-all duration-200 group-hover:scale-110 group-active:scale-95"></div>
           </div>
         )}
       </div>

@@ -92,10 +92,10 @@ export default function App() {
   }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
 
   return (
-    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-aether-bg dark:bg-aether-dark-bg`}>
+    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-slate-50 dark:bg-slate-900`}>
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
-      <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>
+      <aside className={`fixed top-8 bottom-8 left-8 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>
          <FilterPanel 
             tempFilters={tempFilters} 
             setTempFilters={setTempFilters}
@@ -109,10 +109,10 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[344px]'}`}>
-        <div className="h-full p-6 relative z-10 flex flex-col gap-6">
+        <div className="h-full px-8 py-8 relative z-10 flex flex-col gap-8">
           
           {/* TOP ROW: MAP & INTELLIGENCE */}
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+          <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
              
              <div className="col-span-12 lg:col-span-8 h-full min-h-0">
                 <ImpactMap 
@@ -135,7 +135,7 @@ export default function App() {
           </div>
 
           {/* BOTTOM ROW: SIMULATION ENGINE */}
-          <div className="w-full h-[400px] flex-shrink-0">
+          <div className="w-full h-[420px] flex-shrink-0">
              <SimulationEngine 
                 atomData={atomData}
                 oneData={oneData}
