@@ -79,7 +79,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col overflow-hidden relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col overflow-hidden relative" style={{ height: '100%', maxHeight: '100%' }}>
       {/* Header */}
       <div className="px-6 py-5 border-b border-white/20 dark:border-white/10 flex-shrink-0 relative" style={{
         background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
@@ -102,7 +102,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" style={{ minHeight: 0, maxHeight: '100%' }}>
         
         {/* 1. Price & Net Flow Chart */}
         <div className="space-y-3">
@@ -115,7 +115,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
               <ResponsiveContainer width="100%" height="100%">
                  <ComposedChart data={selectedNode.history}>
                     <Tooltip 
-                       contentStyle={{backgroundColor: 'hsl(0 0% 100% / 0.8)', border: '1px solid hsl(0 0% 100% / 0.1)', backdropFilter: 'blur(8px)', borderRadius: '12px', fontSize: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                       contentStyle={{backgroundColor: 'hsl(0 0% 100% / 0.8)', border: '1px solid hsl(0 0% 100% / 0.1)', backdropFilter: 'blur(8px)', borderRadius: '12px', fontSize: '10px', boxShadow: '0 4px 12px rgba(196, 181, 253, 0.2)'}}
                        itemStyle={{color: '#374151', padding: 0, fontWeight: 600}}
                        labelStyle={{display: 'none'}}
                     />

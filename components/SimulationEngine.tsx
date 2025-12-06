@@ -450,9 +450,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [isDragging, h1, h2]);
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex overflow-visible relative">
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex overflow-hidden relative">
       {/* LEFT PANEL: Controls & Allocation */}
-      <div className="w-[42%] border-r border-white/20 dark:border-white/10 flex flex-col overflow-visible relative" style={{
+      <div className="w-[42%] border-r border-white/20 dark:border-white/10 flex flex-col overflow-hidden relative" style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
         backdropFilter: 'blur(12px) saturate(180%)',
         WebkitBackdropFilter: 'blur(12px) saturate(180%)'
@@ -488,7 +488,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   background: 'linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.2)'
+                  boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(196, 181, 253, 0.3)'
                 } : {
                   background: 'transparent'
                 }}
@@ -555,21 +555,21 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         </div>
 
         {/* Bottom: Allocation Splitter */}
-        <div className="flex-1 p-6 flex gap-6 min-h-0 overflow-visible">
+        <div className="flex-1 p-4 flex gap-4 min-h-0 overflow-hidden">
           {/* VERTICAL SLIDER */}
-          <div className="w-20 h-full flex flex-col items-center relative py-4 shrink-0">
+          <div className="w-16 h-full flex flex-col items-center relative py-4 shrink-0">
             <div className="absolute inset-x-0 -top-2 text-center text-[8px] font-bold text-purple-400 uppercase opacity-60">
               100%
             </div>
 
-            <div className="w-full h-full relative">
+            <div className="w-full h-full relative px-2">
               <div
                 ref={sliderRef}
-                className="w-4 h-full rounded-full relative overflow-visible mx-auto"
+                className="w-3 h-full rounded-full relative mx-auto"
                 style={{
                   background: 'linear-gradient(to bottom, #f3f4f6, #e5e7eb)',
                   border: '1px solid rgba(209, 213, 219, 0.4)',
-                  boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)',
+                  boxShadow: 'inset 0 2px 4px rgba(196, 181, 253, 0.1), 0 1px 2px rgba(196, 181, 253, 0.15)',
                 }}
               >
                 {/* Segments - 노드의 bias에 따라 색상 변경, 노드가 없으면 무채색 */}
@@ -584,7 +584,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
                 <div
@@ -599,7 +599,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
                 <div
@@ -613,7 +613,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
                 />
 
@@ -628,25 +628,25 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   style={{
                     bottom: `${h2}%`,
                     transform: 'translate(-50%, 50%)',
-                    width: '2rem',
-                    height: '1.5rem',
+                    width: '1.5rem',
+                    height: '1rem',
                   }}
                 >
                   <div
                     style={{
                       width: '100%',
                       height: '100%',
-                      borderRadius: '0.5rem',
+                      borderRadius: '0.375rem',
                       background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
-                      border: isDragging === 'h2' ? '3px solid #a78bfa' : '2px solid rgba(196, 181, 253, 0.6)',
+                      border: isDragging === 'h2' ? '2px solid #a78bfa' : '1px solid rgba(196, 181, 253, 0.6)',
                       boxShadow: isDragging === 'h2'
-                        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
-                        : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                        ? '0 0 12px rgba(196, 181, 253, 0.9), 0 2px 8px rgba(167, 139, 250, 0.4)'
+                        : '0 2px 6px rgba(196, 181, 253, 0.4)',
                       transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
                     className="flex items-center justify-center"
                   >
-                    <div className="w-4 h-0.5 bg-purple-400 rounded-full" />
+                    <div className="w-3 h-0.5 bg-purple-400 rounded-full" />
                   </div>
                 </div>
 
@@ -660,25 +660,25 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   style={{
                     bottom: `${h1}%`,
                     transform: 'translate(-50%, 50%)',
-                    width: '2rem',
-                    height: '1.5rem',
+                    width: '1.5rem',
+                    height: '1rem',
                   }}
                 >
                   <div
                     style={{
                       width: '100%',
                       height: '100%',
-                      borderRadius: '0.5rem',
+                      borderRadius: '0.375rem',
                       background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
-                      border: isDragging === 'h1' ? '3px solid #a78bfa' : '2px solid rgba(196, 181, 253, 0.6)',
+                      border: isDragging === 'h1' ? '2px solid #a78bfa' : '1px solid rgba(196, 181, 253, 0.6)',
                       boxShadow: isDragging === 'h1'
-                        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
-                        : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+                        ? '0 0 12px rgba(196, 181, 253, 0.9), 0 2px 8px rgba(167, 139, 250, 0.4)'
+                        : '0 2px 6px rgba(196, 181, 253, 0.4)',
                       transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
                     className="flex items-center justify-center"
                   >
-                    <div className="w-4 h-0.5 bg-purple-400 rounded-full" />
+                    <div className="w-3 h-0.5 bg-purple-400 rounded-full" />
                   </div>
                 </div>
               </div>
@@ -690,7 +690,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
           </div>
 
           {/* SLOT STACK */}
-          <div className="flex-1 flex flex-col gap-3 h-full min-h-0 overflow-visible">
+          <div className="flex-1 flex flex-col gap-2 h-full min-h-0 overflow-hidden">
             {slots.map((slot, index) => {
               // slots[0] = A, slots[1] = B, slots[2] = C
               // 표시 순서: A(0), B(1), C(2) - A가 위, C가 아래
@@ -699,17 +699,16 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               return (
                 <div
                   key={slot.id}
-                  className={`flex-1 border rounded-2xl p-2 relative overflow-visible flex flex-col justify-center transition-all duration-300 ${
+                  className={`flex-1 border rounded-xl p-2 relative overflow-hidden flex flex-col justify-center transition-all duration-300 min-h-0 ${
                     slot.weight < 5
                       ? 'opacity-40 bg-gray-50 dark:bg-white/5 border-dashed'
                       : 'bg-white dark:bg-aether-dark-card/50 border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                   }`}
-                  style={{ paddingRight: '2.5rem' }}
                 >
-                  <div className="pl-2 w-full h-full flex items-center gap-2 relative">
+                  <div className="px-2 w-full h-full flex items-center gap-2 relative overflow-hidden">
                     {/* A/B/C 레이블 - 세로 중앙 */}
                     <div 
-                      className="flex items-center justify-center w-6 h-6 border-2 rounded-full text-[10px] font-bold text-white transition-colors duration-200 flex-shrink-0"
+                      className="flex items-center justify-center w-5 h-5 border-2 rounded-full text-[9px] font-bold text-white transition-colors duration-200 flex-shrink-0"
                       style={{ 
                         backgroundColor: slot.node 
                           ? slot.node.bias === 'ATOM' 
@@ -733,13 +732,13 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     {/* 계정 이름과 타입 - 레이블 옆에 배치 */}
                     <div className="flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden">
                       {slot.node ? (
-                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 space-y-1.5">
-                          <div className="text-[11px] font-bold text-gray-800 dark:text-aether-dark-text truncate leading-tight">
+                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 space-y-0.5">
+                          <div className="text-[10px] font-bold text-gray-800 dark:text-aether-dark-text truncate leading-tight">
                             {slot.node.name}
                           </div>
                           <div>
                             <span
-                              className={`text-[9px] px-2 py-1 rounded-md font-bold inline-block ${
+                              className={`text-[8px] px-1.5 py-0.5 rounded font-bold inline-block ${
                                 slot.node.bias === 'ATOM'
                                   ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
                                   : slot.node.bias === 'ATOMONE'
@@ -752,23 +751,23 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="text-[10px] text-gray-300 dark:text-gray-300 italic font-medium">
-                          Select node to assign
+                        <div className="text-[9px] text-gray-300 dark:text-gray-300 italic font-medium truncate">
+                          Select node
                         </div>
                       )}
                     </div>
 
-                    {/* 퍼센트와 삭제 버튼 - 오른쪽 하단 */}
-                    <div className="absolute bottom-0 right-0 flex items-center gap-2 flex-shrink-0 pr-3 pb-3 z-10">
-                      <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    {/* 퍼센트와 삭제 버튼 - 오른쪽 */}
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                      <div className="text-[9px] font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         {Math.round(slot.weight)}%
                       </div>
                       {slot.node && (
                         <button
                           onClick={() => clearSlot(originalIndex)}
-                          className="p-1.5 text-gray-300 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
+                          className="p-1 text-gray-300 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors flex-shrink-0"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={10} />
                         </button>
                       )}
                     </div>
@@ -945,7 +944,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       fontSize: '12px',
                       padding: '12px',
                       boxShadow:
-                        '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        '0 10px 15px -3px rgba(196, 181, 253, 0.2)',
                     }}
                     itemStyle={{ fontWeight: 700 }}
                     labelStyle={{

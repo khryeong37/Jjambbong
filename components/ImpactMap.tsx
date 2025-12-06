@@ -274,7 +274,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   return (
-    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
+    <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative overflow-hidden" style={{ height: '100%', maxHeight: '100%' }}>
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm">
@@ -287,32 +287,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           </div>
         </div>
 
-        <div
-          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl text-[9px] ${
-            apiStatus === 'live'
-              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-              : apiStatus === 'mock'
-              ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
-              : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-aether-dark-subtext'
-          }`}
-        >
-          <div
-            className={`w-1.5 h-1.5 rounded-full ${
-              apiStatus === 'live'
-                ? 'bg-emerald-500'
-                : apiStatus === 'mock'
-                ? 'bg-amber-500'
-                : 'bg-gray-400'
-            }`}
-          ></div>
-          <span className="leading-none">
-            {apiStatus === 'live'
-              ? 'Live Data'
-              : apiStatus === 'mock'
-              ? 'Mock Data'
-              : 'Loading...'}
-          </span>
-        </div>
       </div>
 
       <div
@@ -325,7 +299,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06), inset 0 -2px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08)'
+          boxShadow: 'inset 0 2px 4px rgba(196, 181, 253, 0.1), inset 0 -2px 4px rgba(196, 181, 253, 0.1), 0 4px 16px rgba(196, 181, 253, 0.15)'
         }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}

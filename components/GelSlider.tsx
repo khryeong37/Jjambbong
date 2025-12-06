@@ -148,8 +148,8 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
       ? '1px solid rgba(148, 163, 184, 0.15)'
       : '1px solid rgba(209, 213, 219, 0.4)',
     boxShadow: isDark
-      ? 'inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1)'
-      : 'inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)',
+      ? 'inset 0 2px 4px rgba(196, 181, 253, 0.2), 0 1px 2px rgba(196, 181, 253, 0.15)'
+      : 'inset 0 2px 4px rgba(196, 181, 253, 0.1), 0 1px 2px rgba(196, 181, 253, 0.15)',
     overflow: 'visible'
   } as React.CSSProperties;
 
@@ -175,14 +175,14 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: dragging 
-      ? 'linear-gradient(90deg, #c4b5fd 0%, #a78bfa 30%, #9333ea 50%, #a78bfa 70%, #c4b5fd 100%)'
-      : 'linear-gradient(to bottom, #c4b5fd, #a78bfa)',
+      ? 'linear-gradient(90deg, #c4b5fd 0%, #38bdf8 25%, #a78bfa 50%, #38bdf8 75%, #c4b5fd 100%)'
+      : '#c4b5fd',
     backgroundSize: dragging ? '200% 100%' : '100% 100%',
     backgroundPosition: dragging ? '0% 0%' : '0% 0%',
     border: 'none',
     boxShadow: dragging
-      ? '0 0 16px rgba(196, 181, 253, 0.5), 0 0 32px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-      : '0 2px 8px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+      ? '0 0 16px rgba(196, 181, 253, 0.6), 0 0 32px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+      : '0 2px 8px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
     transition: dragging ? 'none' : 'left 0.15s cubic-bezier(0.4, 0, 0.2, 1), width 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
     animation: dragging ? 'shimmer 1.5s ease-in-out infinite' : 'none',
     willChange: dragging ? 'left, width, background-position' : 'auto',
@@ -230,10 +230,10 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
           ? '2px solid rgba(148, 163, 184, 0.4)'
           : '2px solid rgba(196, 181, 253, 0.6)',
       boxShadow: isActive
-        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(167, 139, 250, 0.4), 0 0 0 3px rgba(196, 181, 253, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+        ? '0 0 20px rgba(196, 181, 253, 0.9), 0 4px 16px rgba(196, 181, 253, 0.5), 0 0 0 3px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
         : isDark
-          ? '0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          : '0 4px 12px rgba(196, 181, 253, 0.4), 0 2px 6px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+          ? '0 4px 12px rgba(196, 181, 253, 0.5), 0 2px 4px rgba(196, 181, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          : '0 4px 12px rgba(196, 181, 253, 0.5), 0 2px 6px rgba(196, 181, 253, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
       transform: isActive ? 'scale(1.2)' : 'scale(1)',
       transition: dragging ? 'none' : 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
       willChange: dragging || isActive ? 'transform' : 'auto',

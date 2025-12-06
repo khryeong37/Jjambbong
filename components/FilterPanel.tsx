@@ -35,7 +35,7 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
       background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
       backdropFilter: 'blur(12px) saturate(180%)',
       WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-      boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(0, 0, 0, 0.08)',
+      boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(196, 181, 253, 0.15)',
       overflow: 'hidden'
     };
     
@@ -78,7 +78,7 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
           backdropFilter: 'blur(12px) saturate(180%)',
           WebkitBackdropFilter: 'blur(12px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.4)',
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(0, 0, 0, 0.08)'
+          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(196, 181, 253, 0.15)'
         }}>
           <button
             onClick={() => setShowDescription(false)}
@@ -144,7 +144,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
               backdropFilter: 'blur(12px) saturate(180%)',
               WebkitBackdropFilter: 'blur(12px) saturate(180%)',
               border: '1px solid rgba(255, 255, 255, 0.5)',
-              boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 4px 16px rgba(0, 0, 0, 0.1)'
+              boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 4px 16px rgba(196, 181, 253, 0.2)'
             }}
             aria-label="Toggle theme"
           >
@@ -170,7 +170,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.4)',
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 4px 16px rgba(0, 0, 0, 0.08)'
+          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 4px 16px rgba(196, 181, 253, 0.15)'
         }}>
            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-3">
              <div className="p-1.5 bg-white dark:bg-aether-dark-card rounded-lg shadow-sm"><Calendar size={12} /></div>
@@ -265,7 +265,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
                    background: 'rgba(255, 255, 255, 0.5)',
                    backdropFilter: 'blur(12px)',
                    WebkitBackdropFilter: 'blur(12px)',
-                   boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.1)'
+                   boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(196, 181, 253, 0.2)'
                  } : {
                    background: 'transparent'
                  }}>
@@ -290,7 +290,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
                        background: 'rgba(255, 255, 255, 0.5)',
                        backdropFilter: 'blur(12px)',
                        WebkitBackdropFilter: 'blur(12px)',
-                       boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.1)'
+                       boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(196, 181, 253, 0.2)'
                      } : {
                        background: 'transparent'
                      }}>
