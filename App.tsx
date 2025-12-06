@@ -123,7 +123,8 @@ export default function App() {
           {/* TOP ROW: MAP & INTELLIGENCE */}
           <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ padding: '16px', margin: '-16px' }}>
              
-             <div className="col-span-12 lg:col-span-8 h-full min-h-0">
+             {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
+             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0 flex-shrink-0" style={{ minHeight: '400px' }}>
                 <ImpactMap 
                   nodes={nodes} 
                   selectedNode={selectedNode} 
@@ -134,7 +135,8 @@ export default function App() {
                 />
              </div>
 
-             <div className="col-span-12 lg:col-span-4 h-full min-h-0">
+             {/* Node Intelligence - 작은 화면에서는 세로로 배치되지만 Impact Map이 우선 */}
+             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0 flex-shrink">
                 <NodeIntelligence 
                   selectedNode={selectedNode}
                   slots={slots}
@@ -144,7 +146,7 @@ export default function App() {
           </div>
 
           {/* BOTTOM ROW: SIMULATION ENGINE */}
-          <div className="w-full h-[480px] flex-shrink-0" style={{ padding: '12px', margin: '-12px', marginTop: '0' }}>
+          <div className="w-full h-[400px] sm:h-[420px] md:h-[450px] lg:h-[480px] flex-shrink-0" style={{ padding: '12px', margin: '-12px', marginTop: '0' }}>
              <SimulationEngine 
                 atomData={atomData}
                 oneData={oneData}

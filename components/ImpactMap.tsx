@@ -281,7 +281,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
             <Zap size={14} className="text-indigo-500 dark:text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-widest">
+            <h2 className="text-[10px] font-bold text-gray-400 dark:text-gray-200 uppercase tracking-widest">
               Impact Map
             </h2>
           </div>
@@ -308,10 +308,10 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         onMouseLeave={handleMouseUpOrLeave}
       >
         {/* Axes labels */}
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext rotate-[-90deg] origin-left pointer-events-none">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 dark:text-gray-200 rotate-[-90deg] origin-left pointer-events-none">
           Tx Count (거래 빈도, log) ↑
         </div>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext pointer-events-none">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400 dark:text-gray-200 pointer-events-none">
           Total Volume (거래 규모, log) →
         </div>
 
@@ -321,25 +321,25 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 dark:border-white/10 hover:bg-white dark:hover:bg-slate-900 transition-all z-20"
           aria-label="Toggle bias legend"
         >
-          <HelpCircle size={16} className="text-gray-600 dark:text-gray-400" />
+          <HelpCircle size={16} className="text-gray-600 dark:text-gray-300" />
         </button>
 
         {/* Color Legend */}
         {showBiasLegend && (
           <div className="absolute top-14 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-white/20 dark:border-white/10 z-20 animate-in slide-in-from-top-2 duration-200">
-            <div className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Node Bias</div>
+            <div className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-2">Node Bias</div>
             <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">ATOM</span>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200">ATOM</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-sky-400"></div>
-              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">ATOMONE</span>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200">ATOMONE</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">Mixed</span>
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200">Mixed</span>
             </div>
             </div>
           </div>
@@ -352,7 +352,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         )}
 
         {!loading && processedNodes.activeCount === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center flex-col text-gray-400 dark:text-aether-dark-subtext z-30">
+          <div className="absolute inset-0 flex items-center justify-center flex-col text-gray-400 dark:text-gray-200 z-30">
             <ShieldAlert className="w-10 h-10 mb-2" />
             <span className="font-semibold">No nodes match filters.</span>
           </div>
@@ -468,21 +468,21 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           <button
             onClick={zoomIn}
             aria-label="Zoom In"
-            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-aether-dark-subtext hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
+            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-200 hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
           >
             <Plus size={16} />
           </button>
           <button
             onClick={zoomOut}
             aria-label="Zoom Out"
-            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-aether-dark-subtext hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
+            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-200 hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
           >
             <Minus size={16} />
           </button>
           <button
             onClick={resetView}
             aria-label="Reset View"
-            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-aether-dark-subtext hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
+            className="w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-200 hover:text-indigo-500 dark:hover:text-white hover:bg-white dark:hover:bg-aether-dark-card transition-all transform hover:scale-105 active:scale-95"
           >
             <Maximize2 size={14} />
           </button>

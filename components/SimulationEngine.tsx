@@ -505,10 +505,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               }}>
                 <Settings2
                   size={14}
-                  className="text-gray-400 dark:text-aether-dark-subtext"
+                  className="text-gray-400 dark:text-gray-200"
                 />
               </div>
-              <h2 className="text-[10px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-widest">
+              <h2 className="text-[10px] font-bold text-gray-400 dark:text-gray-200 uppercase tracking-widest">
                 Config
               </h2>
             </div>
@@ -536,7 +536,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all duration-300 ${
                   strategyMode === 'COPY_TRADING'
                     ? 'bg-gray-900 dark:bg-aether-dark-text text-white dark:text-aether-dark-bg shadow-md'
-                    : 'text-gray-400 dark:text-aether-dark-subtext hover:text-gray-600 dark:hover:text-aether-dark-text'
+                    : 'text-gray-400 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-100'
                 }`}
               >
                 COPY TRADE
@@ -557,10 +557,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   type="number"
                   value={capital}
                   onChange={(e) => setCapital(Number(e.target.value))}
-                  className="bg-transparent text-sm font-bold text-gray-900 dark:text-aether-dark-text w-14 focus:outline-none"
+                  className="bg-transparent text-sm font-bold text-gray-900 dark:text-gray-100 w-14 focus:outline-none"
                 />
               </div>
-              <span className="text-[8px] font-bold text-gray-300 dark:text-aether-dark-subtext uppercase tracking-wider">
+              <span className="text-[8px] font-bold text-gray-300 dark:text-gray-200 uppercase tracking-wider">
                 CAPITAL
               </span>
             </div>
@@ -570,7 +570,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 className={`flex-1 text-[9px] font-bold rounded-xl transition-all ${
                   asset === 'ATOM'
                     ? 'bg-red-50 dark:bg-red-500/10 text-red-500 shadow-sm'
-                    : 'text-gray-400 dark:text-aether-dark-subtext hover:bg-gray-50 dark:hover:bg-white/5'
+                    : 'text-gray-400 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 ATOM
@@ -581,7 +581,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 className={`flex-1 text-[9px] font-bold rounded-xl transition-all ${
                   asset === 'ATOMONE'
                     ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 shadow-sm'
-                    : 'text-gray-400 dark:text-aether-dark-subtext hover:bg-gray-50 dark:hover:bg-white/5'
+                    : 'text-gray-400 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 ONE
@@ -599,8 +599,8 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
             </div>
 
             <div className="w-full h-full relative px-2">
-              <div
-                ref={sliderRef}
+            <div
+              ref={sliderRef}
                 className="w-3 h-full rounded-full relative mx-auto"
                 style={{
                   background: 'linear-gradient(to bottom, #f3f4f6, #e5e7eb)',
@@ -622,8 +622,8 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
-                />
-                <div
+              />
+              <div
                   className="absolute w-full transition-all duration-200"
                   style={{ 
                     bottom: `${h1}%`, 
@@ -637,8 +637,8 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
-                />
-                <div
+              />
+              <div
                   className="absolute bottom-0 w-full rounded-b-full transition-all duration-200"
                   style={{ 
                     height: `${h1}%`,
@@ -651,19 +651,19 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   }}
-                />
+              />
 
-                {/* Handles */}
-                <div
-                  onMouseDown={handleMouseDown('h2')}
+              {/* Handles */}
+              <div
+                onMouseDown={handleMouseDown('h2')}
                   className={`absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center cursor-row-resize transition-all ${
-                    isDragging === 'h2'
+                  isDragging === 'h2'
                       ? 'scale-110'
                       : 'hover:scale-105'
-                  }`}
-                  style={{
-                    bottom: `${h2}%`,
-                    transform: 'translate(-50%, 50%)',
+                }`}
+                style={{
+                  bottom: `${h2}%`,
+                  transform: 'translate(-50%, 50%)',
                     width: '1.5rem',
                     height: '1rem',
                   }}
@@ -684,18 +684,18 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   >
                     <div className="w-3 h-0.5 bg-purple-400 rounded-full" />
                   </div>
-                </div>
+              </div>
 
-                <div
-                  onMouseDown={handleMouseDown('h1')}
+              <div
+                onMouseDown={handleMouseDown('h1')}
                   className={`absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center cursor-row-resize transition-all ${
-                    isDragging === 'h1'
+                  isDragging === 'h1'
                       ? 'scale-110'
                       : 'hover:scale-105'
-                  }`}
-                  style={{
-                    bottom: `${h1}%`,
-                    transform: 'translate(-50%, 50%)',
+                }`}
+                style={{
+                  bottom: `${h1}%`,
+                  transform: 'translate(-50%, 50%)',
                     width: '1.5rem',
                     height: '1rem',
                   }}
@@ -795,30 +795,30 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
 
                     {/* 계정 이름과 타입 - 레이블 옆에 배치 */}
                     <div className="flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden">
-                      {slot.node ? (
+                    {slot.node ? (
                         <div className="animate-in fade-in slide-in-from-left-2 duration-300 space-y-0.5">
                           <div className="text-[10px] font-bold text-gray-800 dark:text-aether-dark-text truncate leading-tight">
-                            {slot.node.name}
-                          </div>
-                          <div>
-                            <span
-                              className={`text-[8px] px-1.5 py-0.5 rounded font-bold inline-block ${
-                                slot.node.bias === 'ATOM'
-                                  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-                                  : slot.node.bias === 'ATOMONE'
-                                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                  : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                              }`}
-                            >
-                              {slot.node.bias}
-                            </span>
-                          </div>
+                          {slot.node.name}
                         </div>
-                      ) : (
+                          <div>
+                          <span
+                              className={`text-[8px] px-1.5 py-0.5 rounded font-bold inline-block ${
+                              slot.node.bias === 'ATOM'
+                                ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                                : slot.node.bias === 'ATOMONE'
+                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                            }`}
+                          >
+                            {slot.node.bias}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
                         <div className="text-[9px] text-gray-300 dark:text-gray-300 italic font-medium truncate">
                           Select node
-                        </div>
-                      )}
+                      </div>
+                    )}
                     </div>
 
                     {/* 퍼센트와 삭제 버튼 - 오른쪽 */}
@@ -1001,14 +1001,14 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                           filter: 'drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4))',
                         }}
                       >
-                        <PlayCircle
+                      <PlayCircle
                           size={40}
                           className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500"
                           strokeWidth={1.5}
-                        />
-                      </div>
+                      />
                     </div>
-                    
+                  </div>
+
                     {/* Hover ripple effect */}
                     <div 
                       className="absolute inset-0 rounded-full border-2 border-indigo-400/0 group-hover:border-indigo-400/50 group-hover:scale-110 transition-all duration-500 group-hover:opacity-0"
@@ -1039,11 +1039,11 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         }}
                       />
                       <span>
-                        {Math.round(
-                          slots.reduce(
-                            (a, b) => a + (b.node ? b.weight : 0),
-                            0
-                          )
+                      {Math.round(
+                        slots.reduce(
+                          (a, b) => a + (b.node ? b.weight : 0),
+                          0
+                        )
                         )}% Capital Allocated
                       </span>
                     </div>
@@ -1134,9 +1134,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   <YAxis hide domain={['auto', 'auto']} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(216 28% 12% / 0.8)',
-                      color: '#E6EDF3',
-                      border: '1px solid hsl(0 0% 100% / 0.1)',
+                      backgroundColor: 'hsl(216 28% 12% / 0.95)',
+                      color: '#e2e8f0',
+                      border: '1px solid hsl(0 0% 100% / 0.2)',
                       backdropFilter: 'blur(8px)',
                       borderRadius: '12px',
                       fontSize: '12px',
@@ -1144,9 +1144,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       boxShadow:
                         '0 10px 15px -3px rgba(196, 181, 253, 0.2)',
                     }}
-                    itemStyle={{ fontWeight: 700 }}
+                    itemStyle={{ fontWeight: 700, color: '#e2e8f0' }}
                     labelStyle={{
-                      color: '#8B949E',
+                      color: '#cbd5e1',
                       marginBottom: '4px',
                       fontSize: '10px',
                       textTransform: 'uppercase',
@@ -1171,7 +1171,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   <Line
                     type="monotone"
                     dataKey="benchmarkValue"
-                    stroke="#484f58"
+                    stroke="#cbd5e1"
                     strokeWidth={1.5}
                     strokeDasharray="6 6"
                     dot={false}
@@ -1181,7 +1181,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
 
               <button
                 onClick={handleReset}
-                className="absolute top-4 right-4 p-2.5 bg-white dark:bg-aether-dark-card/50 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-white/10 shadow-sm rounded-xl text-gray-400 dark:text-aether-dark-subtext hover:text-red-500 dark:hover:text-red-400 transition-all hover:rotate-180 duration-500"
+                className="absolute top-4 right-4 p-2.5 bg-white dark:bg-aether-dark-card/50 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-100 dark:border-white/10 shadow-sm rounded-xl text-gray-400 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400 transition-all hover:rotate-180 duration-500"
               >
                 <RotateCcw size={14} />
               </button>

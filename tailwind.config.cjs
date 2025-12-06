@@ -9,6 +9,9 @@ module.exports = {
     ],
     darkMode: 'class',
     theme: {
+        fontFamily: {
+            sans: ['"Google Sans Flex"', 'sans-serif'],
+        },
         extend: {
             colors: {
                 aether: {
