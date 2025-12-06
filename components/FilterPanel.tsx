@@ -214,11 +214,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
         <FilterSection title="Scale" icon={DollarSign} isOpen={true} description="거래 규모 및 거래량 지표를 기준으로 노드를 필터링합니다. Total Tx Quantity는 기간 내 매수·매도 합계(토큰 수량)이며, Average Tx Size는 총 거래 수량을 거래 횟수로 나눈 평균 거래 크기입니다.">
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-gray-700 dark:text-gray-200">{tempFilters.totalVolume[0].toLocaleString()} ~ {tempFilters.totalVolume[1].toLocaleString()}</span></div>
-            <GelSlider isDual min={0} max={100} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
+            <GelSlider isDual min={0} max={10000} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-gray-700 dark:text-gray-200">{tempFilters.avgTradeSize[0].toLocaleString()} ~ {tempFilters.avgTradeSize[1].toLocaleString()}</span></div>
-            <GelSlider isDual min={0} max={1000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
+            <GelSlider isDual min={0} max={10000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
           </div>
         </FilterSection>
 
@@ -230,7 +230,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-gray-700 dark:text-gray-200">{tempFilters.txCount[0]} ~ {tempFilters.txCount[1]}</span></div>
-              <GelSlider isDual min={0} max={500} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
+              <GelSlider isDual min={0} max={5000} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
             </div>
         </FilterSection>
         

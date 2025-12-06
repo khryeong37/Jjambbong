@@ -28,10 +28,10 @@ export default function App() {
 
   const initialFilters: FilterState = {
     dateRange: { start: sevenDaysAgo, end: today },
-    totalVolume: [0, 100],
-    avgTradeSize: [0, 1000],
+    totalVolume: [0, 10000], // 실제 데이터 범위에 맞게 증가
+    avgTradeSize: [0, 10000], // 실제 데이터 범위에 맞게 증가
     netBuyRatio: [-1, 1],
-    txCount: [0, 500],
+    txCount: [0, 5000], // 실제 데이터 범위에 맞게 증가
     atomShare: [0, 1],
     oneShare: [0, 1],
     ibcShare: [0, 1],
@@ -109,20 +109,29 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[336px]'}`}>
-        <div className="h-full relative z-10 flex flex-col gap-3 overflow-hidden" style={{ paddingLeft: '0px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px' }}>
+        <div className="h-full relative z-10 flex flex-col gap-3 overflow-hidden" style={{ 
+          paddingLeft: '0px', 
+          paddingRight: '12px', 
+          paddingTop: '12px', 
+          paddingBottom: '12px' // 필터 패널의 bottom-3 (12px)와 맞춤
+        }}>
           
-          {/* TOP ROW: MAP & INTELLIGENCE - 16:9 비율 최적화 */}
-          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0" style={{ 
+          {/* TOP ROW: MAP & INTELLIGENCE - 겹침 방지 반응형 구조 */}
+          <div className="grid grid-cols-12 gap-3 min-h-0" style={{ 
             paddingLeft: '12px',
-            // 16:9 비율에서 최적 높이: 화면 높이의 약 55-60% (패딩/갭 제외)
-            minHeight: 'calc(100vh - 520px)',
-            maxHeight: 'calc(100vh - 420px)'
+            // BOTTOM ROW의 최소 높이(350px) + gap(12px) + 패딩(24px)을 고려하여 최대 높이 제한
+            flex: '1 1 0%',
+            minHeight: '300px',
+            maxHeight: 'calc(100% - 386px)', // BOTTOM ROW minHeight(350px) + gap(12px) + padding(24px)
+            height: 'auto',
+            overflow: 'hidden'
           }}>
              
-             {/* Impact Map - 16:9에서 충분한 공간 확보 */}
+             {/* Impact Map - 반응형 최소 높이 조정 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ 
-               minHeight: '400px',
-               height: '100%'
+               minHeight: '300px',
+               height: '100%',
+               maxHeight: '100%'
              }}>
                 <ImpactMap 
                   nodes={nodes} 
@@ -134,10 +143,11 @@ export default function App() {
                 />
              </div>
 
-             {/* Node Intelligence - 16:9에서 적절한 너비 유지 */}
+             {/* Node Intelligence - 반응형 최소 높이 조정 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0" style={{
-               minHeight: '400px',
-               height: '100%'
+               minHeight: '300px',
+               height: '100%',
+               maxHeight: '100%'
              }}>
                 <NodeIntelligence 
                   selectedNode={selectedNode}
@@ -147,13 +157,17 @@ export default function App() {
              </div>
           </div>
 
-          {/* BOTTOM ROW: SIMULATION ENGINE - 16:9 비율 최적화 */}
-          <div className="grid grid-cols-12 gap-3 flex-shrink-0" style={{ 
-            // 16:9 비율에서 적절한 높이: 화면 높이의 약 35-40%
-            height: 'clamp(400px, calc(100vh * 0.38), 500px)',
-            minHeight: '400px',
+          {/* BOTTOM ROW: SIMULATION ENGINE - 필터 패널 하단과 정렬 */}
+          <div className="grid grid-cols-12 gap-3" style={{ 
+            paddingLeft: '12px',
+            // 필터 패널의 bottom-3 (12px)와 맞추기 위해 하단 마진 없이 정렬
+            flex: '0 1 auto',
+            minHeight: 'clamp(350px, calc(100vh * 0.35), 400px)',
             maxHeight: '500px',
-            paddingLeft: '12px'
+            height: 'clamp(350px, calc(100vh * 0.38), 500px)',
+            overflow: 'hidden',
+            // 필터 패널 하단과 정렬: 메인 컨텐츠 하단 패딩(12px)과 일치
+            marginBottom: '0'
           }}>
              <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
                <SimulationEngine 
