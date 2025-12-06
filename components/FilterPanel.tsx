@@ -318,12 +318,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
             <RefreshCcw size={10} /> Reset
           </button>
         </div>
-        <button onClick={applyFilters} className="w-full py-4 glass-button text-white rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden" style={{
-          background: 'linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)',
+        <button onClick={applyFilters} className="w-full py-4 glass-button rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden text-gray-800 dark:text-gray-200" style={{
+          background: 'transparent',
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.1)'
+          border: '2px solid #6ee7b7',
+          boxShadow: 'none'
         }}>
            Apply Filters
         </button>

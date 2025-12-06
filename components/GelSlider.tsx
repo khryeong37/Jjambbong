@@ -122,8 +122,8 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: isDark
-      ? '#94a3b8'
-      : '#9ca3af',
+      ? '#6ee7b7'
+      : '#6ee7b7',
     border: 'none',
     boxShadow: 'none'
   } as React.CSSProperties;
