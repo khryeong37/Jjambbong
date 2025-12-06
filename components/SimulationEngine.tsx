@@ -494,7 +494,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         WebkitBackdropFilter: 'blur(12px) saturate(180%)'
       }}>
         {/* Top: Strategy Settings */}
-        <div className="px-5 py-4 border-b border-white/20 dark:border-white/10 shrink-0 space-y-4">
+        <div className="px-4 py-3 border-b border-white/20 dark:border-white/10 shrink-0 space-y-3" style={{ minHeight: 'fit-content' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 rounded-lg glass-button" style={{
@@ -591,9 +591,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         </div>
 
         {/* Bottom: Allocation Splitter */}
-        <div className="flex-1 p-4 flex gap-4 min-h-0 overflow-hidden">
+        <div className="flex-1 p-3 flex gap-3 min-h-0 overflow-hidden">
           {/* VERTICAL SLIDER */}
-          <div className="w-16 h-full flex flex-col items-center relative py-4 shrink-0">
+          <div className="w-16 h-full flex flex-col items-center relative py-2 shrink-0">
             <div className="absolute inset-x-0 -top-2 text-center text-[8px] font-bold text-purple-400 uppercase opacity-60">
               100%
             </div>
@@ -943,10 +943,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 className="group relative transition-all disabled:cursor-not-allowed focus:outline-none"
               >
                 {/* Main container */}
-                <div className="flex flex-col items-center justify-center gap-8 transform translate-y-5">
+                <div className="flex flex-col items-center justify-center gap-5 transform translate-y-12">
                   {/* Animated orb */}
                   <div
-                    className={`relative w-32 h-32 transition-all duration-500 ${
+                    className={`relative w-24 h-24 transition-all duration-500 ${
                       !isRunnable ? 'grayscale opacity-50' : ''
                     }`}
                   >
@@ -1002,7 +1002,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         }}
                       >
                       <PlayCircle
-                          size={40}
+                          size={28}
                           className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500"
                           strokeWidth={1.5}
                       />
@@ -1019,9 +1019,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   </div>
 
                   {/* Text content */}
-                  <div className="text-center space-y-3">
+                  <div className="text-center space-y-2">
                     <div
-                      className={`text-2xl font-black tracking-tight transition-all duration-300 ${
+                      className={`text-lg font-black tracking-tight transition-all duration-300 ${
                         isRunnable
                           ? 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:tracking-wide'
                           : 'text-gray-400 dark:text-gray-500'
@@ -1030,10 +1030,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       {isRunnable ? 'RUN SIMULATION' : 'ADD NODES TO SLOTS'}
                     </div>
                     <div 
-                      className="inline-flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] bg-gray-100/80 dark:bg-white/5 px-4 py-1.5 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
+                      className="inline-flex items-center gap-1.5 text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] bg-gray-100/80 dark:bg-white/5 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
                     >
                       <div 
-                        className={`w-1.5 h-1.5 rounded-full ${isRunnable ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                        className={`w-1 h-1 rounded-full ${isRunnable ? 'bg-emerald-500' : 'bg-gray-400'}`}
                         style={{
                           animation: isRunnable ? 'pulse 2s ease-in-out infinite' : 'none',
                         }}

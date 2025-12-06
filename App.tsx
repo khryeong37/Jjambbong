@@ -107,7 +107,7 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[344px]'}`}>
-        <div className="h-full p-6 relative z-10 flex flex-col gap-6">
+        <div className="h-full p-6 relative z-10 flex flex-col gap-6 overflow-hidden">
           
           {/* Theme Toggle */}
           <div className="absolute top-6 right-6 z-50">
@@ -120,11 +120,11 @@ export default function App() {
             </button>
           </div>
           
-          {/* TOP ROW: MAP & INTELLIGENCE */}
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ padding: '16px', margin: '-16px' }}>
+          {/* TOP ROW: MAP & INTELLIGENCE - 버블차트 우선 */}
+          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden" style={{ padding: '16px', margin: '-16px' }}>
              
              {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0 flex-shrink-0" style={{ minHeight: '400px' }}>
+             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0 overflow-hidden" style={{ minHeight: '300px' }}>
                 <ImpactMap 
                   nodes={nodes} 
                   selectedNode={selectedNode} 
@@ -136,7 +136,7 @@ export default function App() {
              </div>
 
              {/* Node Intelligence - 작은 화면에서는 세로로 배치되지만 Impact Map이 우선 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0 flex-shrink">
+             <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0 overflow-hidden">
                 <NodeIntelligence 
                   selectedNode={selectedNode}
                   slots={slots}
@@ -145,14 +145,23 @@ export default function App() {
              </div>
           </div>
 
-          {/* BOTTOM ROW: SIMULATION ENGINE */}
-          <div className="w-full h-[400px] sm:h-[420px] md:h-[450px] lg:h-[480px] flex-shrink-0" style={{ padding: '12px', margin: '-12px', marginTop: '0' }}>
-             <SimulationEngine 
-                atomData={atomData}
-                oneData={oneData}
-                slots={slots}
-                setSlots={setSlots}
-             />
+          {/* BOTTOM ROW: SIMULATION ENGINE - 작은 화면에서 높이 축소, 버블차트 우선 */}
+          <div className="w-full flex-shrink-0 overflow-hidden" style={{ 
+            height: 'clamp(380px, 35vh, 480px)',
+            minHeight: '380px',
+            maxHeight: '480px',
+            padding: '12px', 
+            margin: '-12px', 
+            marginTop: '0'
+          }}>
+             <div className="h-full">
+               <SimulationEngine 
+                  atomData={atomData}
+                  oneData={oneData}
+                  slots={slots}
+                  setSlots={setSlots}
+               />
+             </div>
           </div>
 
         </div>
