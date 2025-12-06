@@ -190,15 +190,28 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
            </div>
 
            {/* AI Insight */}
-           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-4 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 relative overflow-hidden group">
-              <div className="absolute -right-8 -top-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors duration-500"></div>
-              <div className="flex items-start gap-3 relative z-10">
-                 <div className="bg-white/10 p-1.5 rounded-lg backdrop-blur-sm">
-                   <Sparkles size={14} className="text-yellow-300" />
+           <div className="p-[2px] rounded-2xl relative overflow-hidden group" style={{
+             background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+           }}>
+              <div className="dark:hidden bg-white/90 backdrop-blur-sm rounded-[14px] p-4">
+                 <div className="flex items-start gap-3">
+                    <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-1.5 rounded-lg backdrop-blur-sm border border-indigo-400/30">
+                      <Sparkles size={14} className="text-indigo-600" />
+                    </div>
+                    <p className="text-[11px] text-gray-800 leading-relaxed font-medium">
+                      {loading ? "Generating analysis..." : summary || "Select a node to view AI analysis."}
+                    </p>
                  </div>
-                 <p className="text-[11px] text-indigo-100 dark:text-indigo-100 leading-relaxed font-medium">
-                   {loading ? "Generating analysis..." : summary || "Select a node to view AI analysis."}
-                 </p>
+              </div>
+              <div className="hidden dark:block bg-slate-900/90 backdrop-blur-sm rounded-[14px] p-4">
+                 <div className="flex items-start gap-3">
+                    <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-1.5 rounded-lg backdrop-blur-sm border border-indigo-500/30">
+                      <Sparkles size={14} className="text-indigo-400" />
+                    </div>
+                    <p className="text-[11px] text-gray-200 leading-relaxed font-medium">
+                      {loading ? "Generating analysis..." : summary || "Select a node to view AI analysis."}
+                    </p>
+                 </div>
               </div>
            </div>
         </div>

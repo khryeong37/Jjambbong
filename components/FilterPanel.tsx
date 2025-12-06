@@ -322,7 +322,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
           background: 'transparent',
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          border: '2px solid #6ee7b7',
+          border: '2px solid #7c3aed',
           boxShadow: 'none'
         }}>
            Apply Filters

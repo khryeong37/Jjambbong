@@ -8,6 +8,7 @@ import ImpactMap from './components/ImpactMap';
 import NodeIntelligence from './components/NodeIntelligence';
 import SimulationEngine from './components/SimulationEngine';
 import GradientBackground from './components/GradientBackground';
+import AuroraBackground from './components/AuroraBackground';
 import { loadSwapNodes, loadLocalMarket } from './utils/swapLoader';
 import { NodeData, FilterState, MarketData } from './types';
 
@@ -93,6 +94,7 @@ export default function App() {
 
   return (
     <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-slate-50 dark:bg-slate-900`}>
+      <AuroraBackground />
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
       <aside className={`fixed top-8 bottom-8 left-8 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`}>

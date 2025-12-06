@@ -152,13 +152,13 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: dragging 
-      ? 'linear-gradient(90deg, #6ee7b7 0%, #34d399 50%, #6ee7b7 100%)'
-      : '#6ee7b7',
+      ? 'linear-gradient(90deg, #c4b5fd 0%, #a78bfa 50%, #c4b5fd 100%)'
+      : '#c4b5fd',
     backgroundSize: dragging ? '200% 100%' : '100% 100%',
     backgroundPosition: dragging ? '0% 0%' : '0% 0%',
     border: 'none',
     boxShadow: dragging 
-      ? '0 0 12px rgba(110, 231, 183, 0.6), 0 0 24px rgba(110, 231, 183, 0.3)'
+      ? '0 0 12px rgba(196, 181, 253, 0.6), 0 0 24px rgba(196, 181, 253, 0.3)'
       : 'none',
     transition: dragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     animation: dragging ? 'shimmer 1.5s ease-in-out infinite' : 'none',
@@ -200,12 +200,12 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
         ? 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)'
         : '#ffffff',
       border: isActive
-        ? '2px solid #6ee7b7'
+        ? '2px solid #c4b5fd'
         : isDark 
           ? '1px solid rgba(148, 163, 184, 0.3)'
           : '1px solid rgba(209, 213, 219, 0.8)',
       boxShadow: isActive
-        ? '0 0 16px rgba(110, 231, 183, 0.8), 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(110, 231, 183, 0.3)'
+        ? '0 0 16px rgba(196, 181, 253, 0.8), 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(196, 181, 253, 0.3)'
         : isDark
           ? '0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)'
           : '0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1)',
@@ -255,7 +255,7 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
                 width: '24px',
                 height: '24px',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(110, 231, 183, 0.7) 0%, rgba(110, 231, 183, 0.3) 50%, transparent 100%)',
+                background: 'radial-gradient(circle, rgba(196, 181, 253, 0.7) 0%, rgba(196, 181, 253, 0.3) 50%, transparent 100%)',
                 transform: 'translate(-50%, -50%)',
                 pointerEvents: 'none',
                 zIndex: 20,
