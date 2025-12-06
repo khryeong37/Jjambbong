@@ -272,7 +272,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 p-6 flex flex-col relative">
+    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 p-6 flex flex-col relative" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="bg-indigo-50 dark:bg-indigo-500/10 p-1.5 rounded-lg shadow-sm">

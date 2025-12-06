@@ -59,17 +59,24 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
 
   useEffect(() => {
     const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark') || 
-                window.matchMedia('(prefers-color-scheme: dark)').matches);
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkMode);
     };
     checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    const observer = new MutationObserver(() => {
+      checkDarkMode();
+    });
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'],
+      subtree: false
+    });
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', checkDarkMode);
+    const handleMediaChange = () => checkDarkMode();
+    mediaQuery.addEventListener('change', handleMediaChange);
     return () => {
       observer.disconnect();
-      mediaQuery.removeEventListener('change', checkDarkMode);
+      mediaQuery.removeEventListener('change', handleMediaChange);
     };
   }, []);
 
@@ -105,13 +112,13 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     position: 'absolute',
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
-    boxShadow: 'inset 0 0px 0px 0.3px oklch(0 0 0 / 0.2), 0px 0.2em 0.3em -0.15em oklch(0.3 0.01 212 / 0.05), 0px 0.15em 0.2em -0.1em oklch(0.3 0.01 212 / 0.05)',
+    boxShadow: 'inset 0 0px 0px 0.3px oklch(0 0 0 / 0.2)',
     background: 'transparent'
   } as React.CSSProperties;
 
   const rangeBarBeforeStyle: React.CSSProperties = {
     content: '""', position: 'absolute', inset: '0.2em', zIndex: -2,
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)', // Emerald color
     borderRadius: borderRadius,
     opacity: 'calc((var(--range-size) / 100 + 0.4) * 0.6)',
     transition: 'all 0.2s'
@@ -131,16 +138,17 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     cursor: 'pointer', zIndex: 10,
   };
 
+  // 라이트 모드: 매우 어두운 검정색, 다크 모드: 매우 밝은 흰색
   const nubStyle: React.CSSProperties = isDark ? {
     width: '100%', height: '100%', borderRadius: '50%',
-    backgroundImage: 'linear-gradient(to bottom, oklch(0.85 0.01 40), oklch(0.7 0.005 40))',
-    boxShadow: 'inset 0 0 1em oklch(0.7 0.01 212), inset 0 0 0.2em oklch(0.7 0.01 212), oklch(0.7 0.01 212 / 0.3) 0px 0.15em 0.2em -0.5px, oklch(0.7 0.01 212 / 0.2) 0px 0.08em 0.15em -0.5px',
-    border: 'solid 0.15em oklch(0.75 0.005 212)',
+    backgroundImage: 'linear-gradient(to bottom, #ffffff, #f0f0f0)',
+    boxShadow: 'inset 0 0 1em rgba(255, 255, 255, 0.4), inset 0 0 0.2em rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4) 0px 0.15em 0.2em -0.5px, rgba(255, 255, 255, 0.3) 0px 0.08em 0.15em -0.5px',
+    border: 'solid 0.15em #e0e0e0',
   } : {
     width: '100%', height: '100%', borderRadius: '50%',
-    backgroundImage: 'linear-gradient(to bottom, oklch(0.3 0.01 40), oklch(0.6 0.005 40))',
-    boxShadow: 'inset 0 0 1em oklch(0.3 0.01 212), inset 0 0 0.2em oklch(0.3 0.01 212), oklch(0.3 0.01 212 / 0.2) 0px 0.15em 0.2em -0.5px, oklch(0.3 0.01 212 / 0.12) 0px 0.08em 0.15em -0.5px',
-    border: 'solid 0.15em oklch(0.3 0.005 212)',
+    backgroundImage: 'linear-gradient(to bottom, #0a0a0a, #1a1a1a)',
+    boxShadow: 'inset 0 0 1em rgba(0, 0, 0, 0.6), inset 0 0 0.2em rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4) 0px 0.15em 0.2em -0.5px, rgba(0, 0, 0, 0.3) 0px 0.08em 0.15em -0.5px',
+    border: 'solid 0.15em #000000',
   };
 
   return (

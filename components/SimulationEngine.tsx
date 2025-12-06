@@ -414,11 +414,11 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [isDragging, h1, h2]);
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex overflow-hidden">
+    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex overflow-visible">
       {/* LEFT PANEL: Controls & Allocation */}
-      <div className="w-[42%] border-r border-gray-50 dark:border-white/5 flex flex-col bg-gray-50/30 dark:bg-black/10">
+      <div className="w-[42%] border-r border-gray-50 dark:border-white/5 flex flex-col bg-gray-50/50 dark:bg-white/5 overflow-visible">
         {/* Top: Strategy Settings */}
-        <div className="p-6 border-b border-gray-50 dark:border-white/5 shrink-0 space-y-5">
+        <div className="p-4 border-b border-gray-50 dark:border-white/5 shrink-0 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="bg-white dark:bg-aether-dark-card p-1.5 rounded-lg shadow-sm">
@@ -502,60 +502,90 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         </div>
 
         {/* Bottom: Allocation Splitter */}
-        <div className="flex-1 p-6 flex gap-6 min-h-0">
+        <div className="flex-1 p-6 flex gap-6 min-h-0 overflow-visible">
           {/* VERTICAL SLIDER */}
-          <div className="w-16 h-full flex flex-col items-center relative py-4 shrink-0">
+          <div className="w-20 h-full flex flex-col items-center relative py-4 shrink-0">
             <div className="absolute inset-x-0 -top-2 text-center text-[8px] font-bold text-purple-400 uppercase opacity-60">
               100%
             </div>
 
-            <div
-              ref={sliderRef}
-              className="w-3 h-full bg-gray-100 dark:bg-white/5 rounded-full relative shadow-inner overflow-visible"
-            >
-              {/* Segments */}
+            <div className="w-full h-full relative">
               <div
-                className="absolute top-0 w-full rounded-t-full bg-purple-400/20 backdrop-blur-sm border-b border-white/50 dark:border-black/20 transition-all duration-100"
-                style={{ height: `${100 - h2}%` }}
-              />
-              <div
-                className="absolute w-full bg-blue-400/20 backdrop-blur-sm border-b border-white/50 dark:border-black/20 transition-all duration-100"
-                style={{ bottom: `${h1}%`, height: `${h2 - h1}%` }}
-              />
-              <div
-                className="absolute bottom-0 w-full rounded-b-full bg-red-400/20 backdrop-blur-sm transition-all duration-100"
-                style={{ height: `${h1}%` }}
-              />
-
-              {/* Handles */}
-              <div
-                onMouseDown={handleMouseDown('h2')}
-                className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
-                  isDragging === 'h2'
-                    ? 'scale-110 ring-2 ring-purple-400 ring-offset-2 ring-offset-aether-dark-card'
-                    : ''
-                }`}
-                style={{
-                  bottom: `${h2}%`,
-                  transform: 'translate(-50%, 50%)',
-                }}
+                ref={sliderRef}
+                className="w-3 h-full bg-gray-100 dark:bg-white/5 rounded-full relative shadow-inner overflow-visible mx-auto"
               >
-                <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
-              </div>
+                {/* Segments - 노드의 bias에 따라 색상 변경, 노드가 없으면 무채색 */}
+                <div
+                  className="absolute top-0 w-full rounded-t-full transition-all duration-100"
+                  style={{ 
+                    height: `${100 - h2}%`,
+                    backgroundColor: slots[0].node 
+                      ? slots[0].node.bias === 'ATOM' 
+                        ? '#EF4444' 
+                        : slots[0].node.bias === 'ATOMONE' 
+                        ? '#3B82F6' 
+                        : '#A855F7'
+                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                  }}
+                />
+                <div
+                  className="absolute w-full transition-all duration-100"
+                  style={{ 
+                    bottom: `${h1}%`, 
+                    height: `${h2 - h1}%`,
+                    backgroundColor: slots[1].node 
+                      ? slots[1].node.bias === 'ATOM' 
+                        ? '#EF4444' 
+                        : slots[1].node.bias === 'ATOMONE' 
+                        ? '#3B82F6' 
+                        : '#A855F7'
+                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                  }}
+                />
+                <div
+                  className="absolute bottom-0 w-full rounded-b-full transition-all duration-100"
+                  style={{ 
+                    height: `${h1}%`,
+                    backgroundColor: slots[2].node 
+                      ? slots[2].node.bias === 'ATOM' 
+                        ? '#EF4444' 
+                        : slots[2].node.bias === 'ATOMONE' 
+                        ? '#3B82F6' 
+                        : '#A855F7'
+                      : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                  }}
+                />
 
-              <div
-                onMouseDown={handleMouseDown('h1')}
-                className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
-                  isDragging === 'h1'
-                    ? 'scale-110 ring-2 ring-blue-400 ring-offset-2 ring-offset-aether-dark-card'
-                    : ''
-                }`}
-                style={{
-                  bottom: `${h1}%`,
-                  transform: 'translate(-50%, 50%)',
-                }}
-              >
-                <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
+                {/* Handles */}
+                <div
+                  onMouseDown={handleMouseDown('h2')}
+                  className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
+                    isDragging === 'h2'
+                      ? 'scale-110 ring-2 ring-purple-400 ring-offset-2 ring-offset-aether-dark-card'
+                      : ''
+                  }`}
+                  style={{
+                    bottom: `${h2}%`,
+                    transform: 'translate(-50%, 50%)',
+                  }}
+                >
+                  <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
+                </div>
+
+                <div
+                  onMouseDown={handleMouseDown('h1')}
+                  className={`absolute left-1/2 -translate-x-1/2 w-8 h-5 bg-white dark:bg-slate-300 border border-gray-200 dark:border-slate-400/50 shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg z-30 flex items-center justify-center cursor-row-resize hover:scale-110 transition-all ${
+                    isDragging === 'h1'
+                      ? 'scale-110 ring-2 ring-blue-400 ring-offset-2 ring-offset-aether-dark-card'
+                      : ''
+                  }`}
+                  style={{
+                    bottom: `${h1}%`,
+                    transform: 'translate(-50%, 50%)',
+                  }}
+                >
+                  <div className="w-3 h-0.5 bg-gray-300 dark:bg-slate-500 rounded-full" />
+                </div>
               </div>
             </div>
 
@@ -565,73 +595,88 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
           </div>
 
           {/* SLOT STACK */}
-          <div className="flex-1 flex flex-col gap-3 h-full min-h-0">
-            {[...slots].reverse().map((slot, reversedIndex) => {
-              const originalIndex = 2 - reversedIndex;
+          <div className="flex-1 flex flex-col gap-3 h-full min-h-0 overflow-visible">
+            {slots.map((slot, index) => {
+              // slots[0] = A, slots[1] = B, slots[2] = C
+              // 표시 순서: A(0), B(1), C(2) - A가 위, C가 아래
+              const originalIndex = index;
+              const slotLabels = ['A', 'B', 'C'];
               return (
                 <div
                   key={slot.id}
-                  className={`flex-1 border rounded-2xl p-3 relative overflow-hidden flex flex-col justify-center transition-all duration-300 ${
+                  className={`flex-1 border rounded-2xl p-2 relative overflow-visible flex flex-col justify-center transition-all duration-300 ${
                     slot.weight < 5
                       ? 'opacity-40 bg-gray-50 dark:bg-white/5 border-dashed'
                       : 'bg-white dark:bg-aether-dark-card/50 border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                   }`}
+                  style={{ paddingRight: '2.5rem' }}
                 >
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-1.5"
-                    style={{ backgroundColor: slot.color }}
-                  />
-
-                  <div className="pl-4 w-full">
-                    <div className="flex justify-between items-start mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest">
-                          Slot {slot.id}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-700 dark:text-aether-dark-text bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-lg">
-                          {Math.round(slot.weight)}%
-                        </span>
-                      </div>
-
-                      <div className="flex gap-1">
-                        {slot.node && (
-                          <button
-                            onClick={() => clearSlot(originalIndex)}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
+                  <div className="pl-2 w-full h-full flex items-center gap-2 relative">
+                    {/* A/B/C 레이블 - 세로 중앙 */}
+                    <div 
+                      className="flex items-center justify-center w-6 h-6 border-2 rounded-full text-[10px] font-bold text-white transition-colors duration-200 flex-shrink-0"
+                      style={{ 
+                        backgroundColor: slot.node 
+                          ? slot.node.bias === 'ATOM' 
+                            ? '#EF4444' 
+                            : slot.node.bias === 'ATOMONE' 
+                            ? '#3B82F6' 
+                            : '#A855F7'
+                          : '#9CA3AF', // 노드가 없으면 무채색 (회색)
+                        borderColor: slot.node 
+                          ? slot.node.bias === 'ATOM' 
+                            ? '#EF4444' 
+                            : slot.node.bias === 'ATOMONE' 
+                            ? '#3B82F6' 
+                            : '#A855F7'
+                          : '#9CA3AF' // 노드가 없으면 무채색 (회색)
+                      }}
+                    >
+                      {slotLabels[originalIndex]}
                     </div>
 
-                    {slot.node ? (
-                      <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                        <div className="text-[11px] font-bold text-gray-800 dark:text-aether-dark-text truncate leading-tight">
-                          {slot.node.name}
+                    {/* 계정 이름과 타입 - 레이블 옆에 배치 */}
+                    <div className="flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden">
+                      {slot.node ? (
+                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 space-y-1.5">
+                          <div className="text-[11px] font-bold text-gray-800 dark:text-aether-dark-text truncate leading-tight">
+                            {slot.node.name}
+                          </div>
+                          <div>
+                            <span
+                              className={`text-[9px] px-2 py-1 rounded-md font-bold inline-block ${
+                                slot.node.bias === 'ATOM'
+                                  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                                  : slot.node.bias === 'ATOMONE'
+                                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                  : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                              }`}
+                            >
+                              {slot.node.bias}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span
-                            className={`text-[8px] px-1.5 py-0.5 rounded-md font-bold ${
-                              slot.node.bias === 'ATOM'
-                                ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-                                : slot.node.bias === 'ATOMONE'
-                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                            }`}
-                          >
-                            {slot.node.bias}
-                          </span>
-                          <span className="text-[9px] text-gray-400 dark:text-aether-dark-subtext font-medium">
-                            AII: {Math.floor(slot.node.size)}
-                          </span>
+                      ) : (
+                        <div className="text-[10px] text-gray-300 dark:text-gray-300 italic font-medium">
+                          Select node to assign
                         </div>
+                      )}
+                    </div>
+
+                    {/* 퍼센트와 삭제 버튼 - 오른쪽 하단 */}
+                    <div className="absolute bottom-0 right-0 flex items-center gap-2 flex-shrink-0 pr-3 pb-3 z-10">
+                      <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {Math.round(slot.weight)}%
                       </div>
-                    ) : (
-                      <div className="text-[10px] text-gray-300 dark:text-gray-600 italic font-medium pl-1">
-                        Select node to assign
-                      </div>
-                    )}
+                      {slot.node && (
+                        <button
+                          onClick={() => clearSlot(originalIndex)}
+                          className="p-1.5 text-gray-300 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -718,7 +763,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         )}
 
         {/* Results Header */}
-        <div className="flex gap-6 mb-6 shrink-0 relative z-10">
+        <div className="flex gap-6 mb-4 shrink-0 relative z-10">
           <div className="flex-1 p-3 bg-white dark:bg-aether-dark-card/50 rounded-2xl shadow-soft dark:shadow-none border border-gray-50 dark:border-white/10">
             <span className="text-[9px] font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-widest block mb-1">
               Total PnL
@@ -749,13 +794,13 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               {result ? result.roi.toFixed(2) : '0.00'}%
             </div>
           </div>
-          <div className="flex-1 p-3 bg-gray-900 dark:bg-aether-dark-text rounded-2xl shadow-soft dark:shadow-none border border-gray-900 text-right">
-            <span className="text-[9px] font-bold text-gray-500 dark:text-aether-dark-bg uppercase tracking-widest block mb-1">
+          <div className="flex-1 p-3 bg-gray-900 dark:bg-aether-dark-text rounded-2xl shadow-soft dark:shadow-none border border-gray-900 dark:border-aether-dark-text text-right">
+            <span className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest block mb-1">
               Final Value
             </span>
-            <div className="text-2xl font-bold text-white dark:text-aether-dark-bg">
+            <div className="text-2xl font-bold text-white dark:text-aether-dark-text">
               {result ? result.finalValue.toFixed(0) : '0'}{' '}
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-800">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                 {asset}
               </span>
             </div>
@@ -763,7 +808,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         </div>
 
         {/* Chart Container */}
-        <div className="flex-1 bg-gray-50/50 dark:bg-black/20 rounded-3xl border border-gray-100 dark:border-white/5 p-5 relative min-h-0 z-10">
+        <div className="flex-1 bg-gray-50/50 dark:bg-white/5 rounded-3xl border border-gray-100 dark:border-white/5 p-5 relative min-h-0 z-10">
           {hasRun && result && result.timeline.length > 0 && (
             <>
               <ResponsiveContainer width="100%" height="100%">

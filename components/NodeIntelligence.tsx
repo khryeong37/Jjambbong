@@ -64,10 +64,10 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
     return (
       <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center">
          <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-6 shadow-inner border border-gray-100 dark:border-white/5">
-            <Layers size={32} className="text-gray-300 dark:text-gray-700" />
+            <Layers size={32} className="text-gray-300 dark:text-gray-300" />
          </div>
          <h3 className="text-xs font-bold text-gray-400 dark:text-aether-dark-subtext uppercase tracking-[0.2em]">Select a Node</h3>
-         <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-2">Click on any bubble to view intelligence</p>
+         <p className="text-[10px] text-gray-300 dark:text-gray-300 mt-2">Click on any bubble to view intelligence</p>
       </div>
     );
   }
@@ -79,7 +79,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex flex-col overflow-hidden">
+    <div className="h-full bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 flex flex-col overflow-hidden" style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}>
       {/* Header */}
       <div className="p-6 border-b border-gray-50 dark:border-white/5 flex-shrink-0 bg-white/50 dark:bg-transparent backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-2">

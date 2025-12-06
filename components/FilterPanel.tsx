@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FilterState } from '../types';
-import { ChevronDown, ChevronUp, Zap, Calendar, RefreshCcw, SlidersHorizontal, BarChart2, Share2, Activity, Target, DollarSign } from 'lucide-react';
+import { ChevronDown, ChevronUp, Zap, Calendar, RefreshCcw, SlidersHorizontal, BarChart2, Share2, Activity, Target, DollarSign, Sun, Moon } from 'lucide-react';
 import GelSlider from './GelSlider';
 
 interface FilterPanelProps {
@@ -9,6 +9,8 @@ interface FilterPanelProps {
   applyFilters: () => void;
   resetFilters: () => void;
   initialFilters: FilterState;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 const FilterSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode; isOpen?: boolean }> = ({ title, icon: Icon, children, isOpen = false }) => {
@@ -18,20 +20,20 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
     <div className="border-b border-gray-50 dark:border-white/5 last:border-0">
       <button 
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 px-2 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-all duration-300 group rounded-xl"
+        className="w-full flex items-center justify-between py-2 px-2 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-all duration-300 group rounded-xl"
       >
         <div className="flex items-center gap-3">
-          <Icon size={14} className="text-gray-400 dark:text-gray-300 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
+          <Icon size={14} className="text-gray-400 dark:text-gray-300 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors" />
           <span className="text-xs font-bold tracking-wider text-gray-800 dark:text-gray-200 uppercase group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{title}</span>
         </div>
-        {open ? <ChevronUp size={14} className="text-gray-300 dark:text-gray-400 group-hover:text-gray-500" /> : <ChevronDown size={14} className="text-gray-300 dark:text-gray-400 group-hover:text-gray-500" />}
+        {open ? <ChevronUp size={14} className="text-gray-300 dark:text-gray-300 group-hover:text-gray-500 dark:group-hover:text-gray-200" /> : <ChevronDown size={14} className="text-gray-300 dark:text-gray-300 group-hover:text-gray-500 dark:group-hover:text-gray-200" />}
       </button>
-      {open && <div className="pb-6 px-2 space-y-8 animate-in slide-in-from-top-2 duration-300 ease-out">{children}</div>}
+      {open && <div className="pb-3 px-2 space-y-4 animate-in slide-in-from-top-2 duration-300 ease-out">{children}</div>}
     </div>
   );
 };
 
-const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, applyFilters, resetFilters, initialFilters }) => {
+const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, applyFilters, resetFilters, initialFilters, theme, setTheme }) => {
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
 
@@ -57,15 +59,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
   return (
     <div className="h-full flex flex-col bg-white/80 dark:bg-aether-dark-card/80 backdrop-blur-2xl rounded-[32px] shadow-float dark:shadow-float-dark border border-white/60 dark:border-white/10 overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-gray-50 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-transparent backdrop-blur-sm">
+      <div className="px-6 py-3 border-b border-gray-50 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-transparent backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50">
-            <Zap size={16} className="text-white fill-current" />
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900 dark:text-aether-dark-text leading-none text-sm">AETHER</h1>
-            <p className="text-[9px] font-bold text-gray-700 dark:text-aether-dark-subtext tracking-[0.2em] mt-1">ANALYTICS</p>
-          </div>
+          <button
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            className="w-8 h-8 flex items-center justify-center bg-white/60 dark:bg-aether-dark-card/60 backdrop-blur-md rounded-full shadow-md border border-white/50 dark:border-white/10 text-gray-500 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-white transition-all transform hover:scale-110 active:scale-95"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
+          <h1 className="font-bold text-gray-900 dark:text-aether-dark-subtext leading-none text-sm">FILTER</h1>
         </div>
         <button onClick={resetFilters} className="text-[9px] font-bold text-gray-700 dark:text-aether-dark-subtext hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-all">
           <RefreshCcw size={10} /> RESET
@@ -73,7 +76,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-2">
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-2">
         
         {/* 0. TIME PERIOD */}
         <div className="bg-gray-50/50 dark:bg-white/5 rounded-2xl p-4 mb-4 border border-gray-100/50 dark:border-white/5">
@@ -91,7 +94,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
                className="bg-transparent focus:outline-none flex-1 text-center date-input date-input-no-icon text-gray-700 dark:text-gray-200 [color-scheme:light] dark:[color-scheme:dark] cursor-pointer" 
                style={{ color: 'rgb(55, 65, 81)' }} 
              />
-             <span className="text-gray-300 dark:text-gray-500 flex-shrink-0">→</span>
+             <span className="text-gray-300 dark:text-gray-300 flex-shrink-0">→</span>
              <input 
                ref={endDateRef}
                type="date" 
@@ -201,7 +204,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
       {/* Apply Button */}
       <div className="p-6 border-t border-gray-50 dark:border-white/5 bg-white/80 dark:bg-aether-dark-card/80">
         <div className="flex items-center justify-between text-[11px] text-gray-700 dark:text-gray-200 mb-3">
-          <span>‘적용하기’ 클릭 시에만 중앙/우측/백테스트 패널이 갱신됩니다.</span>
+          <span>아래 버튼을 눌러 그래프를 필터링하세요</span>
           <button onClick={resetFilters} className="inline-flex items-center gap-1 text-red-500 dark:text-red-400 font-semibold hover:underline text-[11px]">
             <RefreshCcw size={10} /> Reset
           </button>
