@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FilterState } from '../types';
 import { ChevronDown, ChevronUp, Zap, Calendar, RefreshCcw, SlidersHorizontal, BarChart2, Share2, Activity, Target, DollarSign, Sun, Moon, HelpCircle, X } from 'lucide-react';
 import GelSlider from './GelSlider';
@@ -20,12 +20,12 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
   const getSectionStyle = () => {
     // Light mode - 닫혀 있을 때도 라운드된 사각형
     const lightStyle = {
-      border: '1px solid rgba(255, 255, 255, 0.4)',
+      border: 'none',
       borderRadius: '16px',
       background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
       backdropFilter: 'blur(12px) saturate(180%)',
       WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-      boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(196, 181, 253, 0.15)',
+      boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.08)',
       overflow: 'hidden'
     };
     
@@ -94,8 +94,19 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
 };
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, applyFilters, resetFilters, initialFilters, theme, setTheme }) => {
+  const [isDark, setIsDark] = useState(false);
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const setDatePreset = (days: number) => {
       const end = new Date();
@@ -121,26 +132,24 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
       
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/20 dark:border-white/10 flex items-center justify-between relative backdrop-blur-sm" style={{
-        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)'
+        background: isDark 
+          ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.08) 100%)'
+          : 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+        backdropFilter: isDark ? 'blur(22px) saturate(180%) brightness(1.04)' : 'blur(12px)',
+        WebkitBackdropFilter: isDark ? 'blur(22px) saturate(180%) brightness(1.04)' : 'blur(12px)',
+        boxShadow: isDark 
+          ? 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 0 rgba(0, 0, 0, 0.3)'
+          : 'none'
       }}>
         <div className="flex items-center gap-3">
+          <h1 className="font-bold text-gray-900 dark:text-gray-100 leading-none text-sm">FILTER</h1>
           <button
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            className="w-8 h-8 flex items-center justify-center glass-button rounded-full text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white relative"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%)',
-              backdropFilter: 'blur(12px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
-              boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 4px 16px rgba(196, 181, 253, 0.2)'
-            }}
+            className="w-8 h-8 flex items-center justify-center bg-white/60 dark:bg-aether-dark-card/60 backdrop-blur-md rounded-full shadow-md border border-white/50 dark:border-white/10 text-gray-500 dark:text-aether-dark-subtext hover:text-indigo-500 dark:hover:text-white transition-all transform hover:scale-110 active:scale-95"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
           </button>
-          <h1 className="font-bold text-gray-900 dark:text-gray-100 leading-none text-sm">FILTER</h1>
         </div>
         <button onClick={resetFilters} className="text-[9px] font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1.5 px-2 py-1 rounded-full glass-button transition-all" style={{
           background: 'rgba(255, 255, 255, 0.2)',
@@ -255,7 +264,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
                    background: 'rgba(255, 255, 255, 0.5)',
                    backdropFilter: 'blur(12px)',
                    WebkitBackdropFilter: 'blur(12px)',
-                   boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(196, 181, 253, 0.2)'
+                   boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(110, 231, 183, 0.2)'
                  } : {
                    background: 'transparent'
                  }}>
@@ -280,7 +289,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
                        background: 'rgba(255, 255, 255, 0.5)',
                        backdropFilter: 'blur(12px)',
                        WebkitBackdropFilter: 'blur(12px)',
-                       boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(196, 181, 253, 0.2)'
+                       boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(110, 231, 183, 0.2)'
                      } : {
                        background: 'transparent'
                      }}>
@@ -299,21 +308,28 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ tempFilters, setTempFilters, 
 
       {/* Apply Button */}
       <div className="px-6 py-5 border-t border-white/20 dark:border-white/10 relative" style={{
-        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)'
+        background: isDark
+          ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.08) 100%)'
+          : 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
+        backdropFilter: isDark ? 'blur(22px) saturate(180%) brightness(1.04)' : 'blur(12px)',
+        WebkitBackdropFilter: isDark ? 'blur(22px) saturate(180%) brightness(1.04)' : 'blur(12px)',
+        boxShadow: isDark 
+          ? 'inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+          : 'none'
       }}>
         <div className="flex items-center justify-end text-[11px] text-gray-700 dark:text-gray-200 mb-4">
           <button onClick={resetFilters} className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold hover:underline text-[11px]">
             <RefreshCcw size={10} /> Reset
           </button>
         </div>
-        <button onClick={applyFilters} className="w-full py-4 glass-button rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden text-gray-800 dark:text-gray-200" style={{
+        <button onClick={applyFilters} className="w-full py-4 glass-button rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden text-gray-800 dark:text-white" style={{
           background: 'transparent',
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          border: '2px solid #7c3aed',
-          boxShadow: 'none'
+          backdropFilter: 'blur(20px) saturate(180%) brightness(1.05)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%) brightness(1.05)',
+          border: isDark ? '2px solid #5A7FFF' : '2px solid #10b981',
+          boxShadow: isDark 
+            ? 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 24px -8px rgba(90, 127, 255, 0.3)'
+            : 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 24px -8px rgba(16, 185, 129, 0.3)'
         }}>
            Apply Filters
         </button>

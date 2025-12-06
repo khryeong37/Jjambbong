@@ -141,7 +141,7 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     height: '6px',
     borderRadius: '99vw',
     background: isDark 
-      ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6))'
+      ? 'linear-gradient(to bottom, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.09))'
       : 'linear-gradient(to bottom, rgba(226, 232, 240, 0.8), rgba(241, 245, 249, 0.6))',
     border: isDark 
       ? '1px solid rgba(71, 85, 105, 0.3)'
@@ -172,13 +172,21 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     left: `${rangeStart}%`,
     width: `${rangeEnd - rangeStart}%`,
     background: dragging 
-      ? 'linear-gradient(90deg, #818cf8 0%, #a78bfa 50%, #818cf8 100%)'
-      : 'linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)',
+      ? (isDark 
+          ? 'linear-gradient(90deg, #5A7FFF 0%, #7A9FFF 50%, #5A7FFF 100%)'
+          : 'linear-gradient(90deg, #34d399 0%, #6ee7b7 50%, #34d399 100%)')
+      : (isDark
+          ? 'linear-gradient(90deg, #5A7FFF 0%, #7A9FFF 100%)'
+          : 'linear-gradient(90deg, #34d399 0%, #6ee7b7 100%)'),
     backgroundSize: dragging ? '200% 100%' : '100% 100%',
     border: 'none',
     boxShadow: dragging
-      ? '0 0 12px rgba(129, 140, 248, 0.5), 0 0 24px rgba(167, 139, 250, 0.3)'
-      : '0 1px 4px rgba(99, 102, 241, 0.3)',
+      ? (isDark
+          ? '0 0 12px rgba(90, 127, 255, 0.5), 0 0 24px rgba(122, 159, 255, 0.3)'
+          : '0 0 12px rgba(52, 211, 153, 0.5), 0 0 24px rgba(110, 231, 183, 0.3)')
+      : (isDark
+          ? '0 1px 4px rgba(90, 127, 255, 0.3)'
+          : '0 1px 4px rgba(16, 185, 129, 0.3)'),
     transition: dragging ? 'none' : 'left 0.15s ease-out, width 0.15s ease-out, box-shadow 0.2s ease',
     animation: dragging ? 'shimmer 2s ease-in-out infinite' : 'none',
     willChange: dragging ? 'left, width' : 'auto',
@@ -224,12 +232,14 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
         ? 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)'
         : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
       border: isActive
-        ? '2px solid #818cf8'
+        ? (isDark ? '2px solid #5A7FFF' : '2px solid #34d399')
         : isDark 
           ? '2px solid rgba(148, 163, 184, 0.5)'
           : '2px solid rgba(203, 213, 225, 0.8)',
       boxShadow: isActive
-        ? `0 0 0 4px ${isDark ? 'rgba(129, 140, 248, 0.2)' : 'rgba(129, 140, 248, 0.15)'}, 0 2px 8px rgba(0, 0, 0, 0.15)`
+        ? (isDark
+            ? `0 0 0 4px rgba(90, 127, 255, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)`
+            : `0 0 0 4px rgba(52, 211, 153, 0.15), 0 2px 8px rgba(0, 0, 0, 0.15)`)
         : isDark
           ? '0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)'
           : '0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',

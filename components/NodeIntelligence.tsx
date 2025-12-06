@@ -87,7 +87,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
         boxShadow: 'none',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         ...(isDark ? {
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.09) 100%)',
         } : {})
       }}>
          <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-6 shadow-inner border border-gray-100 dark:border-white/5">
@@ -106,7 +106,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
   ];
 
   return (
-    <div key={animationKey} className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative" style={{ 
+    <div key={animationKey} className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative overflow-hidden" style={{ 
       height: '100%', 
       maxHeight: '100%', 
       borderRadius: '32px', 
@@ -138,7 +138,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
           {selectedNode.name}
         </h1>
         <div className="flex gap-2 mt-3 node-intel-section" style={{ animationDelay: '100ms' }}>
-           <span className={`text-[9px] font-bold px-3 py-1 rounded-full shadow-sm ${selectedNode.bias === 'ATOM' ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : selectedNode.bias === 'ATOMONE' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'}`}>
+           <span className={`text-[9px] font-bold px-3 py-1 rounded-full shadow-sm ${selectedNode.bias === 'ATOM' ? 'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400' : selectedNode.bias === 'ATOMONE' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400' : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'}`}>
              {selectedNode.bias} ECOSYSTEM
            </span>
            <span className="text-[9px] font-bold px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-200">
@@ -183,7 +183,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
                     />
                     <Bar dataKey="netFlow" barSize={6} radius={[2, 2, 0, 0]}>
                       {selectedNode.history.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.netFlow > 0 ? '#F87171' : '#60A5FA'} fillOpacity={0.8} />
+                        <Cell key={`cell-${index}`} fill={entry.netFlow > 0 ? '#f87171' : '#60a5fa'} fillOpacity={0.8} />
                       ))}
                     </Bar>
                     <Line type="monotone" dataKey="price" stroke={isDark ? '#cbd5e1' : '#9CA3AF'} strokeWidth={2} dot={false} />
@@ -288,46 +288,48 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
            </div>
         </div>
 
-        {/* Assign to Simulation */}
-        <div className="space-y-3 node-intel-section" style={{ animationDelay: '850ms' }}>
-          <div className="flex items-center justify-between">
-             <span className="text-[10px] font-bold text-gray-400 dark:text-gray-200 uppercase tracking-wider">Assign to Simulation</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-             {slots.map((slot, slotIndex) => {
-                const isOccupied = !!slot.node;
-                const isCurrentNodeInSlot = isOccupied && slot.node!.id === selectedNode.id;
-                
-                let buttonText = `Slot ${slot.id}`;
-                let ButtonIcon = PlusCircle;
-                let buttonClass = 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 border-gray-100 dark:border-white/10';
+      </div>
 
-                if (isCurrentNodeInSlot) {
-                   buttonText = 'Assigned';
-                   ButtonIcon = CheckCircle;
-                   buttonClass = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20';
-                } else if (isOccupied) {
-                   buttonText = 'Replace';
-                   ButtonIcon = Replace;
-                   buttonClass = 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 border-amber-100 dark:border-amber-500/20';
-                }
+      {/* Assign to Simulation - Fixed Bottom */}
+      <div className="px-6 py-5 border-t border-white/20 dark:border-white/10 flex-shrink-0 relative" style={{
+        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottomLeftRadius: '32px',
+        borderBottomRightRadius: '32px'
+      }}>
+        <div className="grid grid-cols-3 gap-2">
+          {slots.map((slot, slotIndex) => {
+            const isOccupied = !!slot.node;
+            const isCurrentNodeInSlot = isOccupied && slot.node!.id === selectedNode.id;
+            
+            let buttonText = `Slot ${slot.id}`;
+            let ButtonIcon = PlusCircle;
+            let buttonClass = 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 border-gray-100 dark:border-white/10';
 
-                return (
-                   <button
-                      key={slot.id}
-                      onClick={() => handleAssignToSlot(slot.id)}
-                      disabled={isCurrentNodeInSlot}
-                      className={`w-full p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 node-intel-slot-btn ${buttonClass}`}
-                      style={{ animationDelay: `${900 + slotIndex * 80}ms` }}
-                   >
-                      <ButtonIcon size={14} />
-                      <span className="text-[9px] font-bold uppercase tracking-wider">{buttonText}</span>
-                   </button>
-                );
-             })}
-          </div>
+            if (isCurrentNodeInSlot) {
+              buttonText = 'Assigned';
+              ButtonIcon = CheckCircle;
+              buttonClass = 'bg-[#5A7FFF]/10 dark:bg-[#5A7FFF]/15 text-[#5A7FFF] dark:text-[#5A7FFF] border-[#5A7FFF]/20 dark:border-[#5A7FFF]/30';
+            } else if (isOccupied) {
+              buttonText = 'Replace';
+              ButtonIcon = Replace;
+              buttonClass = 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 border-amber-100 dark:border-amber-500/20';
+            }
+
+            return (
+              <button
+                key={slot.id}
+                onClick={() => handleAssignToSlot(slot.id)}
+                disabled={isCurrentNodeInSlot}
+                className={`w-full p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 ${buttonClass}`}
+              >
+                <ButtonIcon size={14} />
+                <span className="text-[9px] font-bold uppercase tracking-wider">{buttonText}</span>
+              </button>
+            );
+          })}
         </div>
-
       </div>
     </div>
   );

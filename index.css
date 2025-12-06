@@ -22,7 +22,7 @@
   }
   
   .dark ::selection {
-    background: rgba(129, 140, 248, 0.3);
+    background: rgba(90, 127, 255, 0.3);
   }
   
   input[type="date"] {
@@ -640,62 +640,61 @@
      Ultra-deep, luminous glass with advanced glow
      =========================================== */
   .dark .glass-card-dark {
+    /* Night-Navy Glass Morphism - iOS 17/18/VisionOS Style */
     background: 
       linear-gradient(
         135deg,
-        rgba(30, 41, 59, 0.96) 0%,
-        rgba(15, 23, 42, 0.94) 20%,
-        rgba(30, 41, 59, 0.95) 40%,
-        rgba(15, 23, 42, 0.93) 60%,
-        rgba(30, 41, 59, 0.95) 80%,
-        rgba(30, 41, 59, 0.96) 100%
+        rgba(255, 255, 255, 0.10) 0%,
+        rgba(255, 255, 255, 0.08) 25%,
+        rgba(255, 255, 255, 0.09) 50%,
+        rgba(255, 255, 255, 0.08) 75%,
+        rgba(255, 255, 255, 0.10) 100%
       );
-    backdrop-filter: blur(80px) saturate(180%) brightness(0.95);
-    -webkit-backdrop-filter: blur(80px) saturate(180%) brightness(0.95);
-    border: 1px solid transparent;
+    backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+    -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+    border: 1.2px solid transparent;
     background-clip: padding-box;
     position: relative;
+    /* Rim Light & Gradient Edge + Depth */
     box-shadow: 
-      /* Inner highlight - luminous top edge */
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-      inset 0 2px 8px 0 rgba(255, 255, 255, 0.05),
+      /* Inner highlight - top rim light */
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+      inset 0 2px 16px 0 rgba(255, 255, 255, 0.06),
       /* Inner shadow - deep depth */
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.25),
-      inset 0 -2px 12px 0 rgba(0, 0, 0, 0.15),
-      /* Multi-layer ambient shadows */
-      0 2px 6px rgba(0, 0, 0, 0.2),
-      0 4px 12px rgba(0, 0, 0, 0.18),
-      0 8px 24px rgba(0, 0, 0, 0.15),
-      0 16px 48px rgba(0, 0, 0, 0.12),
-      0 32px 96px rgba(0, 0, 0, 0.1),
-      /* Enhanced colored ambient glow */
-      0 0 120px -30px rgba(99, 102, 241, 0.25),
-      0 0 200px -60px rgba(139, 92, 246, 0.15);
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
+      inset 0 -2px 20px 0 rgba(0, 0, 0, 0.2),
+      /* Ambient depth layers - navy shadows */
+      0 2px 10px rgba(0, 0, 0, 0.5),
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 8px 40px rgba(0, 0, 0, 0.3),
+      0 16px 80px rgba(8, 10, 16, 0.4);
   }
 
-  /* Advanced gradient border for dark mode */
+  /* Gradient Rim Effect - Rim Light & Edge Refraction (VisionOS Style) */
   .dark .glass-card-dark::before {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1.5px;
+    padding: 1.2px;
     background: linear-gradient(
       135deg,
-      rgba(203, 213, 225, 0.35) 0%,
-      rgba(148, 163, 184, 0.3) 15%,
-      rgba(99, 102, 241, 0.25) 30%,
-      rgba(139, 92, 246, 0.2) 45%,
-      rgba(99, 102, 241, 0.25) 60%,
-      rgba(148, 163, 184, 0.3) 75%,
-      rgba(203, 213, 225, 0.35) 90%,
-      rgba(203, 213, 225, 0.4) 100%
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.16) 15%,
+      rgba(255, 255, 255, 0.10) 30%,
+      rgba(255, 255, 255, 0.08) 45%,
+      rgba(255, 255, 255, 0.06) 50%,
+      rgba(255, 255, 255, 0.08) 55%,
+      rgba(255, 255, 255, 0.10) 70%,
+      rgba(255, 255, 255, 0.16) 85%,
+      rgba(255, 255, 255, 0.22) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-    opacity: 0.85;
+    opacity: 0.9;
+    filter: blur(0.3px);
   }
 
   /* ===========================================
@@ -711,13 +710,13 @@
 
   .glass-button:hover {
     transform: translateY(-2px) scale(1.02);
-    backdrop-filter: blur(28px) saturate(220%) brightness(1.05);
-    -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(1.05);
+    backdrop-filter: blur(30px) saturate(200%) brightness(1.06);
+    -webkit-backdrop-filter: blur(30px) saturate(200%) brightness(1.06);
     box-shadow: 
       inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 6px 20px rgba(99, 102, 241, 0.18),
-      0 3px 8px rgba(0, 0, 0, 0.06),
-      0 0 40px -10px rgba(139, 92, 246, 0.2);
+      0 6px 24px rgba(90, 127, 255, 0.20),
+      0 3px 10px rgba(0, 0, 0, 0.4),
+      0 0 48px -12px rgba(90, 127, 255, 0.25);
   }
 
   .glass-button:active {
@@ -749,7 +748,7 @@
   }
 
   .glass-input:focus-within {
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: rgba(52, 211, 153, 0.5);
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.85) 0%,
@@ -759,37 +758,40 @@
       inset 0 2px 6px rgba(0, 0, 0, 0.03),
       inset 0 1px 0 rgba(255, 255, 255, 0.8),
       0 1px 3px rgba(0, 0, 0, 0.03),
-      0 0 0 4px rgba(99, 102, 241, 0.12),
-      0 0 20px -5px rgba(99, 102, 241, 0.2);
+      0 0 0 4px rgba(52, 211, 153, 0.12),
+      0 0 20px -5px rgba(52, 211, 153, 0.2);
   }
 
   .dark .glass-input {
     background: linear-gradient(
       135deg,
-      rgba(30, 41, 59, 0.8) 0%,
-      rgba(15, 23, 42, 0.75) 100%
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(255, 255, 255, 0.08) 100%
     );
-    border: 1.5px solid rgba(148, 163, 184, 0.35);
+    backdrop-filter: blur(24px) saturate(180%) brightness(1.03);
+    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.03);
+    border: 1.2px solid rgba(255, 255, 255, 0.12);
     box-shadow: 
-      inset 0 2px 6px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 1px 3px rgba(0, 0, 0, 0.15),
-      0 0 0 0 rgba(99, 102, 241, 0);
+      inset 0 2px 10px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 1px 4px rgba(0, 0, 0, 0.6),
+      0 0 0 0 rgba(90, 127, 255, 0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark .glass-input:focus-within {
-    border-color: rgba(99, 102, 241, 0.6);
+    border-color: rgba(90, 127, 255, 0.5);
     background: linear-gradient(
       135deg,
-      rgba(30, 41, 59, 0.9) 0%,
-      rgba(15, 23, 42, 0.85) 100%
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.10) 100%
     );
     box-shadow: 
-      inset 0 2px 6px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 1px 3px rgba(0, 0, 0, 0.15),
-      0 0 0 4px rgba(99, 102, 241, 0.2),
-      0 0 30px -10px rgba(99, 102, 241, 0.3);
+      inset 0 2px 10px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 1px 4px rgba(0, 0, 0, 0.6),
+      0 0 0 3px rgba(90, 127, 255, 0.15),
+      0 0 28px -8px rgba(90, 127, 255, 0.2);
   }
 
   /* ===========================================
@@ -814,15 +816,18 @@
   .dark .glass-panel {
     background: linear-gradient(
       135deg,
-      rgba(15, 23, 42, 0.6) 0%,
-      rgba(30, 41, 59, 0.5) 100%
+      rgba(255, 255, 255, 0.11) 0%,
+      rgba(255, 255, 255, 0.09) 100%
     );
-    border: 1.5px solid rgba(71, 85, 105, 0.4);
+    backdrop-filter: blur(26px) saturate(180%) brightness(1.04);
+    -webkit-backdrop-filter: blur(26px) saturate(180%) brightness(1.04);
+    border: 1.2px solid rgba(255, 255, 255, 0.12);
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 2px 8px rgba(255, 255, 255, 0.02),
-      0 2px 8px rgba(0, 0, 0, 0.2),
-      0 1px 3px rgba(0, 0, 0, 0.15);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 2px 16px rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+      0 2px 14px rgba(0, 0, 0, 0.5),
+      0 1px 5px rgba(0, 0, 0, 0.4);
   }
 
   /* ===========================================
@@ -856,14 +861,16 @@
   .dark .glass-border::before {
     background: linear-gradient(
       135deg,
-      rgba(203, 213, 225, 0.4) 0%,
-      rgba(148, 163, 184, 0.35) 20%,
-      rgba(99, 102, 241, 0.3) 40%,
-      rgba(139, 92, 246, 0.25) 60%,
-      rgba(99, 102, 241, 0.3) 80%,
-      rgba(71, 85, 105, 0.35) 100%
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.16) 20%,
+      rgba(255, 255, 255, 0.10) 40%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.10) 60%,
+      rgba(255, 255, 255, 0.16) 80%,
+      rgba(255, 255, 255, 0.22) 100%
     );
     opacity: 0.9;
+    filter: blur(0.3px);
   }
 
   /* ===========================================
@@ -905,7 +912,7 @@
      FILTER SECTION - Premium Collapsible Sections
      =========================================== */
   .filter-section-open {
-    border: 1.5px solid rgba(226, 232, 240, 0.7) !important;
+    border: none !important;
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.65) 0%,
@@ -917,27 +924,26 @@
     box-shadow: 
       inset 0 1px 0 rgba(255, 255, 255, 0.9),
       inset 0 2px 6px rgba(255, 255, 255, 0.4),
-      0 4px 16px rgba(0, 0, 0, 0.04),
-      0 2px 8px rgba(0, 0, 0, 0.02),
-      0 0 40px -10px rgba(139, 92, 246, 0.1) !important;
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 2px 6px rgba(0, 0, 0, 0.08) !important;
   }
 
   .dark .filter-section-open {
-    border: 1.5px solid rgba(71, 85, 105, 0.4) !important;
+    border: 1.2px solid rgba(255, 255, 255, 0.14) !important;
     background: linear-gradient(
       135deg,
-      rgba(30, 41, 59, 0.75) 0%,
-      rgba(15, 23, 42, 0.7) 50%,
-      rgba(30, 41, 59, 0.72) 100%
+      rgba(255, 255, 255, 0.13) 0%,
+      rgba(255, 255, 255, 0.11) 50%,
+      rgba(255, 255, 255, 0.12) 100%
     ) !important;
-    backdrop-filter: blur(32px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+    backdrop-filter: blur(32px) saturate(180%) brightness(1.06) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.06) !important;
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 2px 8px rgba(255, 255, 255, 0.02),
-      0 4px 20px rgba(0, 0, 0, 0.25),
-      0 2px 10px rgba(0, 0, 0, 0.15),
-      0 0 60px -20px rgba(99, 102, 241, 0.15) !important;
+      inset 0 1px 0 rgba(255, 255, 255, 0.20),
+      inset 0 2px 16px rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+      0 4px 24px rgba(0, 0, 0, 0.6),
+      0 2px 12px rgba(0, 0, 0, 0.5) !important;
   }
 
   /* ===========================================
@@ -962,17 +968,19 @@
   .dark .glass-highlight {
     background: linear-gradient(
       135deg,
-      rgba(99, 102, 241, 0.18) 0%,
-      rgba(139, 92, 246, 0.14) 50%,
-      rgba(168, 85, 247, 0.12) 100%
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.13) 100%
     );
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1.5px solid rgba(99, 102, 241, 0.3);
+    backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+    -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+    border: 1.2px solid rgba(255, 255, 255, 0.18);
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 2px 12px rgba(99, 102, 241, 0.2),
-      0 0 30px -10px rgba(139, 92, 246, 0.25);
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 2px 16px rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+      0 2px 20px rgba(0, 0, 0, 0.5),
+      0 0 48px -12px rgba(0, 0, 0, 0.3);
   }
 
   /* ===========================================
@@ -1016,7 +1024,7 @@
   }
 
   .dark .custom-scrollbar {
-    scrollbar-color: rgba(71, 85, 105, 0.35) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -1039,11 +1047,13 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.5);
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(203, 213, 225, 0.7);
+    background: rgba(255, 255, 255, 0.40);
   }
 
   /* ===========================================
@@ -1068,14 +1078,14 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(71, 85, 105, 0.3) 15%,
-      rgba(71, 85, 105, 0.5) 30%,
-      rgba(99, 102, 241, 0.3) 50%,
-      rgba(71, 85, 105, 0.5) 70%,
-      rgba(71, 85, 105, 0.3) 85%,
+      rgba(255, 255, 255, 0.14) 15%,
+      rgba(255, 255, 255, 0.20) 30%,
+      rgba(255, 255, 255, 0.18) 50%,
+      rgba(255, 255, 255, 0.20) 70%,
+      rgba(255, 255, 255, 0.14) 85%,
       transparent 100%
     );
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   }
 
   /* ===========================================
@@ -1125,7 +1135,7 @@
   }
 
   .dark .glass-text-primary {
-    color: #f8fafc;
+    color: #FFFFFF; /* Pure White - WCAG AAA compliant */
   }
 
   .glass-text-secondary {
@@ -1133,7 +1143,7 @@
   }
 
   .dark .glass-text-secondary {
-    color: #cbd5e1;
+    color: #C9D0DA; /* Soft Gray - WCAG AA+ compliant */
   }
 
   .glass-text-muted {
@@ -1141,6 +1151,6 @@
   }
 
   .dark .glass-text-muted {
-    color: #94a3b8;
+    color: #8FA0B5; /* Muted Blue-Gray - WCAG AA compliant */
   }
 }

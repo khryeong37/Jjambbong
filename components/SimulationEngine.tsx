@@ -492,7 +492,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       isolation: 'isolate',
       borderRadius: '32px',
       ...(isDark ? {
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.09) 100%)',
       } : {})
     }}>
       {/* LEFT PANEL: Controls & Allocation */}
@@ -532,7 +532,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   background: 'linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(196, 181, 253, 0.3)'
+                  boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.2)',
                 } : {
                   background: 'transparent'
                 }}
@@ -543,9 +543,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 onClick={() => setStrategyMode('COPY_TRADING')}
                 className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all duration-300 ${
                   strategyMode === 'COPY_TRADING'
-                    ? 'bg-gray-900 dark:bg-aether-dark-text text-white dark:text-aether-dark-bg shadow-md'
+                    ? 'bg-gray-900 dark:bg-[#1a1a1a] text-white dark:text-[#0a0a0a]'
                     : 'text-gray-400 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-100'
                 }`}
+                style={strategyMode === 'COPY_TRADING' ? {} : {}}
               >
                 COPY TRADE
               </button>
@@ -577,7 +578,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 onClick={() => setAsset('ATOM')}
                 className={`flex-1 text-[9px] font-bold rounded-xl transition-all ${
                   asset === 'ATOM'
-                    ? 'bg-red-50 dark:bg-red-500/10 text-red-500 shadow-sm'
+                    ? 'bg-red-50 dark:bg-red-500/10 text-red-400 shadow-sm'
                     : 'text-gray-400 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
@@ -588,7 +589,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 onClick={() => setAsset('ATOMONE')}
                 className={`flex-1 text-[9px] font-bold rounded-xl transition-all ${
                   asset === 'ATOMONE'
-                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 shadow-sm'
+                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-400 shadow-sm'
                     : 'text-gray-400 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
@@ -602,7 +603,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
         <div className="flex-1 p-3 flex gap-3 min-h-0 overflow-hidden">
           {/* VERTICAL SLIDER */}
           <div className="w-16 h-full flex flex-col items-center relative py-2 shrink-0">
-            <div className="absolute inset-x-0 -top-2 text-center text-[8px] font-bold text-purple-400 uppercase opacity-60">
+            <div className="absolute inset-x-0 -top-2 text-center text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase opacity-60">
               100%
             </div>
 
@@ -623,9 +624,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     height: `${100 - h2}%`,
                     background: slots[0].node 
                       ? slots[0].node.bias === 'ATOM' 
-                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
+                        ? 'linear-gradient(to bottom, #f87171, #ef4444)' 
                         : slots[0].node.bias === 'ATOMONE' 
-                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        ? 'linear-gradient(to bottom, #60a5fa, #3b82f6)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
@@ -638,9 +639,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     height: `${h2 - h1}%`,
                     background: slots[1].node 
                       ? slots[1].node.bias === 'ATOM' 
-                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
+                        ? 'linear-gradient(to bottom, #f87171, #ef4444)' 
                         : slots[1].node.bias === 'ATOMONE' 
-                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        ? 'linear-gradient(to bottom, #60a5fa, #3b82f6)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
@@ -652,9 +653,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     height: `${h1}%`,
                     background: slots[2].node 
                       ? slots[2].node.bias === 'ATOM' 
-                        ? 'linear-gradient(to bottom, #fb923c, #f97316)' 
+                        ? 'linear-gradient(to bottom, #f87171, #ef4444)' 
                         : slots[2].node.bias === 'ATOMONE' 
-                        ? 'linear-gradient(to bottom, #38bdf8, #0ea5e9)' 
+                        ? 'linear-gradient(to bottom, #60a5fa, #3b82f6)' 
                         : 'linear-gradient(to bottom, #a855f7, #9333ea)'
                       : 'linear-gradient(to bottom, #d1d5db, #e5e7eb)',
                     boxShadow: '0 2px 8px rgba(196, 181, 253, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
@@ -681,16 +682,22 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       width: '100%',
                       height: '100%',
                       borderRadius: '0.375rem',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
-                      border: isDragging === 'h2' ? '2px solid #a78bfa' : '1px solid rgba(196, 181, 253, 0.6)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #ecfdf5 50%, #d1fae5 100%)',
+                      border: isDragging === 'h2' 
+                        ? (isDark ? '2px solid #5A7FFF' : '2px solid #34d399')
+                        : (isDark ? '1px solid rgba(90, 127, 255, 0.4)' : '1px solid rgba(110, 231, 183, 0.6)'),
                       boxShadow: isDragging === 'h2'
-                        ? '0 0 12px rgba(196, 181, 253, 0.9), 0 2px 8px rgba(167, 139, 250, 0.4)'
-                        : '0 2px 6px rgba(196, 181, 253, 0.4)',
+                        ? (isDark
+                            ? '0 0 12px rgba(90, 127, 255, 0.7), 0 2px 8px rgba(90, 127, 255, 0.4)'
+                            : '0 0 12px rgba(110, 231, 183, 0.9), 0 2px 8px rgba(52, 211, 153, 0.4)')
+                        : (isDark
+                            ? '0 2px 6px rgba(90, 127, 255, 0.3)'
+                            : '0 2px 6px rgba(110, 231, 183, 0.4)'),
                       transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
                     className="flex items-center justify-center"
                   >
-                    <div className="w-3 h-0.5 bg-purple-400 rounded-full" />
+                    <div className={`w-3 h-0.5 rounded-full ${isDark ? 'bg-[#5A7FFF]' : 'bg-emerald-400'}`} />
                   </div>
               </div>
 
@@ -713,22 +720,28 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       width: '100%',
                       height: '100%',
                       borderRadius: '0.375rem',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f3e8ff 100%)',
-                      border: isDragging === 'h1' ? '2px solid #a78bfa' : '1px solid rgba(196, 181, 253, 0.6)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #ecfdf5 50%, #d1fae5 100%)',
+                      border: isDragging === 'h1'
+                        ? (isDark ? '2px solid #5A7FFF' : '2px solid #34d399')
+                        : (isDark ? '1px solid rgba(90, 127, 255, 0.4)' : '1px solid rgba(110, 231, 183, 0.6)'),
                       boxShadow: isDragging === 'h1'
-                        ? '0 0 12px rgba(196, 181, 253, 0.9), 0 2px 8px rgba(167, 139, 250, 0.4)'
-                        : '0 2px 6px rgba(196, 181, 253, 0.4)',
+                        ? (isDark
+                            ? '0 0 12px rgba(90, 127, 255, 0.7), 0 2px 8px rgba(90, 127, 255, 0.4)'
+                            : '0 0 12px rgba(110, 231, 183, 0.9), 0 2px 8px rgba(52, 211, 153, 0.4)')
+                        : (isDark
+                            ? '0 2px 6px rgba(90, 127, 255, 0.3)'
+                            : '0 2px 6px rgba(110, 231, 183, 0.4)'),
                       transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     }}
                     className="flex items-center justify-center"
                   >
-                    <div className="w-3 h-0.5 bg-purple-400 rounded-full" />
+                    <div className={`w-3 h-0.5 rounded-full ${isDark ? 'bg-[#5A7FFF]' : 'bg-emerald-400'}`} />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="absolute inset-x-0 -bottom-2 text-center text-[8px] font-bold text-red-400 uppercase opacity-60">
+            <div className="absolute inset-x-0 -bottom-2 text-center text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase opacity-60">
               0%
             </div>
           </div>
@@ -759,9 +772,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl slot-drop-fill"
                       style={{
                         background: slot.node?.bias === 'ATOM' 
-                          ? 'radial-gradient(ellipse at center top, rgba(249, 115, 22, 0.4) 0%, rgba(249, 115, 22, 0.1) 50%, transparent 70%)'
+                          ? 'radial-gradient(ellipse at center top, rgba(248, 113, 113, 0.4) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 70%)'
                           : slot.node?.bias === 'ATOMONE'
-                          ? 'radial-gradient(ellipse at center top, rgba(56, 189, 248, 0.4) 0%, rgba(56, 189, 248, 0.1) 50%, transparent 70%)'
+                          ? 'radial-gradient(ellipse at center top, rgba(96, 165, 250, 0.4) 0%, rgba(59, 130, 246, 0.1) 50%, transparent 70%)'
                           : 'radial-gradient(ellipse at center top, rgba(168, 85, 247, 0.4) 0%, rgba(168, 85, 247, 0.1) 50%, transparent 70%)',
                       }}
                     />
@@ -784,16 +797,16 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       style={{ 
                         backgroundColor: slot.node 
                           ? slot.node.bias === 'ATOM' 
-                            ? '#EF4444' 
+                            ? '#f87171' 
                             : slot.node.bias === 'ATOMONE' 
-                            ? '#3B82F6' 
+                            ? '#60a5fa' 
                             : '#A855F7'
                           : '#d1d5db', // 노드가 없으면 무채색 (회색)
                         borderColor: slot.node 
                           ? slot.node.bias === 'ATOM' 
-                            ? '#EF4444' 
+                            ? '#f87171' 
                             : slot.node.bias === 'ATOMONE' 
-                            ? '#3B82F6' 
+                            ? '#60a5fa' 
                             : '#A855F7'
                           : '#d1d5db' // 노드가 없으면 무채색 (회색)
                       }}
@@ -812,9 +825,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                           <span
                               className={`text-[8px] px-1.5 py-0.5 rounded font-bold inline-block ${
                               slot.node.bias === 'ATOM'
-                                ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                                ? 'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400'
                                 : slot.node.bias === 'ATOMONE'
-                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400'
                                 : 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
                             }`}
                           >
@@ -1041,7 +1054,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                       className="inline-flex items-center gap-1.5 text-[8px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.15em] bg-gray-100/80 dark:bg-white/5 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
                     >
                       <div 
-                        className={`w-1 h-1 rounded-full ${isRunnable ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                        className={`w-1 h-1 rounded-full ${isRunnable ? 'bg-[#5A7FFF]' : 'bg-gray-400'}`}
                         style={{
                           animation: isRunnable ? 'pulse 2s ease-in-out infinite' : 'none',
                         }}
@@ -1070,8 +1083,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
             </span>
             <div
               className={`text-2xl font-light tracking-tighter ${
-                result && result.totalPnL >= 0
-                  ? 'text-emerald-500 dark:text-emerald-400'
+                !result
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : result.totalPnL >= 0
+                  ? 'text-[#4ED6E6] dark:text-[#4ED6E6]'
                   : 'text-rose-500 dark:text-rose-400'
               }`}
             >
@@ -1085,8 +1100,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
             </span>
             <div
               className={`text-2xl font-light tracking-tighter ${
-                result && result.roi >= 0
-                  ? 'text-emerald-500 dark:text-emerald-400'
+                !result
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : result.roi >= 0
+                  ? 'text-[#4ED6E6] dark:text-[#4ED6E6]'
                   : 'text-rose-500 dark:text-rose-400'
               }`}
             >
@@ -1094,7 +1111,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               {result ? result.roi.toFixed(2) : '0.00'}%
             </div>
           </div>
-          <div className="flex-1 p-3 bg-gray-900 dark:bg-aether-dark-text rounded-2xl shadow-soft dark:shadow-none border border-gray-900 dark:border-aether-dark-text text-right">
+          <div className="flex-1 p-3 bg-gray-900 dark:bg-[#1a1a1a] rounded-2xl shadow-soft dark:shadow-none border border-gray-900 dark:border-[#1a1a1a] text-right">
             <span className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest block mb-1">
               Final Value
             </span>
@@ -1123,12 +1140,12 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     >
                       <stop
                         offset="5%"
-                        stopColor={asset === 'ATOM' ? '#F87171' : '#60A5FA'}
+                        stopColor={asset === 'ATOM' ? '#f87171' : '#60a5fa'}
                         stopOpacity={0.2}
                       />
                       <stop
                         offset="95%"
-                        stopColor={asset === 'ATOM' ? '#F87171' : '#60A5FA'}
+                        stopColor={asset === 'ATOM' ? '#f87171' : '#60a5fa'}
                         stopOpacity={0}
                       />
                     </linearGradient>
@@ -1171,7 +1188,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   <Area
                     type="monotone"
                     dataKey="portfolioValue"
-                    stroke={asset === 'ATOM' ? '#F87171' : '#60A5FA'}
+                    stroke={asset === 'ATOM' ? '#f87171' : '#60a5fa'}
                     strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorValue)"

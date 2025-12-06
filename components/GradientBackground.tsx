@@ -31,92 +31,52 @@ const GradientBackground: React.FC = () => {
 
             {/* === DARK MODE BACKGROUND === */}
             <div className="absolute inset-0 hidden dark:block">
-                {/* Base dark background */}
+                {/* Base dark background - Night-Navy Gradient */}
                 <div 
                     className="absolute inset-0"
                     style={{
-                        background: '#000000'
+                        background: 'linear-gradient(135deg, #080A10 0%, #0C111A 25%, #0D1422 50%, #0C1018 75%, #080A10 100%)'
                     }}
                 />
 
-                {/* Aurora animated gradient layers */}
+                {/* Midnight Navy Mesh Layers - Soft Light Blending */}
                 <div 
-                    className="absolute inset-0 opacity-80"
+                    className="absolute inset-0 opacity-50"
                     style={{
                         background: `
                             radial-gradient(
-                                at 27% 37%,
-                                rgba(99, 102, 241, 0.18) 0px,
+                                at 15% 25%,
+                                rgba(90, 127, 255, 0.08) 0px,
                                 transparent 50%
                             ),
                             radial-gradient(
-                                at 97% 21%,
-                                rgba(139, 92, 246, 0.15) 0px,
+                                at 85% 75%,
+                                rgba(78, 214, 230, 0.06) 0px,
                                 transparent 50%
                             ),
                             radial-gradient(
-                                at 52% 99%,
-                                rgba(59, 130, 246, 0.15) 0px,
-                                transparent 50%
+                                at 50% 50%,
+                                rgba(255, 255, 255, 0.02) 0px,
+                                transparent 70%
                             ),
                             radial-gradient(
-                                at 10% 29%,
-                                rgba(168, 85, 247, 0.12) 0px,
-                                transparent 40%
-                            ),
-                            radial-gradient(
-                                at 97% 96%,
-                                rgba(99, 102, 241, 0.1) 0px,
-                                transparent 50%
-                            ),
-                            radial-gradient(
-                                at 33% 50%,
-                                rgba(139, 92, 246, 0.08) 0px,
-                                transparent 50%
-                            ),
-                            radial-gradient(
-                                at 79% 53%,
-                                rgba(59, 130, 246, 0.1) 0px,
-                                transparent 50%
+                                at 30% 70%,
+                                rgba(90, 127, 255, 0.05) 0px,
+                                transparent 60%
                             )
                         `,
                         backgroundSize: '200% 200%',
-                        backgroundPosition: '50% 50%, 50% 50%',
-                        animation: 'aurora 60s linear infinite',
+                        backgroundPosition: '50% 50%',
+                        animation: 'aurora 120s linear infinite',
+                        mixBlendMode: 'soft-light',
                     }}
                 />
 
-                {/* Additional animated gradient overlay */}
-                <div 
-                    className="absolute inset-0 opacity-60"
-                    style={{
-                        background: `
-                            linear-gradient(
-                                to bottom right,
-                                rgba(99, 102, 241, 0.12) 0%,
-                                rgba(139, 92, 246, 0.1) 25%,
-                                rgba(168, 85, 247, 0.08) 50%,
-                                rgba(99, 102, 241, 0.1) 75%,
-                                rgba(139, 92, 246, 0.12) 100%
-                            ),
-                            linear-gradient(
-                                to top left,
-                                rgba(59, 130, 246, 0.1) 0%,
-                                rgba(99, 102, 241, 0.08) 50%,
-                                rgba(139, 92, 246, 0.1) 100%
-                            )
-                        `,
-                        backgroundSize: '200% 200%',
-                        backgroundPosition: '50% 50%, 50% 50%',
-                        animation: 'aurora 60s linear infinite',
-                    }}
-                />
-
-                {/* Subtle vignette */}
+                {/* Deep Vignette - Enhanced Depth */}
                 <div 
                     className="absolute inset-0"
                     style={{
-                        background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%)',
+                        background: 'radial-gradient(ellipse at center, transparent 0%, rgba(8, 10, 16, 0.5) 100%)',
                     }}
                 />
             </div>

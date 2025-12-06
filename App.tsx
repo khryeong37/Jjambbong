@@ -67,8 +67,8 @@ export default function App() {
   const [slots, setSlots] = useState<
     { id: string; node: NodeData | null; weight: number; color: string }[]
   >([
-    { id: 'A', node: null, weight: 50, color: '#F87171' }, // Soft Red
-    { id: 'B', node: null, weight: 30, color: '#60A5FA' }, // Soft Blue
+    { id: 'A', node: null, weight: 50, color: '#f87171' }, // Soft Red
+    { id: 'B', node: null, weight: 30, color: '#60a5fa' }, // Soft Blue
     { id: 'C', node: null, weight: 20, color: '#A78BFA' }, // Soft Purple
   ]);
 
@@ -92,36 +92,27 @@ export default function App() {
   }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
 
   return (
-    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-gray-300 dark:bg-black`}>
+    <div className={`h-screen font-sans flex overflow-hidden relative text-sm bg-gray-300 dark:bg-[#080A10]`}>
       <GradientBackground />
       {/* LEFT SIDEBAR (FILTER) */}
-      <aside className={`fixed inset-y-6 left-6 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[320px]'} transition-all duration-300 ease-out`} style={{ padding: '8px', margin: '-8px' }}>
+      <aside className={`fixed top-3 bottom-3 left-3 z-50 ${isSidebarCollapsed ? 'w-24' : 'w-[340px]'} transition-all duration-300 ease-out`} style={{ padding: '8px', margin: '-8px' }}>
          <FilterPanel 
             tempFilters={tempFilters} 
             setTempFilters={setTempFilters}
             applyFilters={applyFilters}
             resetFilters={resetFilters}
             initialFilters={initialFilters}
+            theme={theme}
+            setTheme={setTheme}
          />
       </aside>
 
       {/* MAIN CONTENT */}
       <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[336px]'}`}>
-        <div className="h-full relative z-10 flex flex-col gap-6 overflow-hidden" style={{ paddingLeft: '0px', paddingRight: '24px', paddingTop: '24px', paddingBottom: '24px' }}>
-          
-          {/* Theme Toggle */}
-          <div className="absolute top-6 right-6 z-50">
-            <button
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="w-10 h-10 flex items-center justify-center bg-white/60 dark:bg-aether-dark-card/60 backdrop-blur-md rounded-full shadow-md border border-white/50 dark:border-white/10 text-gray-500 dark:text-aether-dark-subtext hover:text-indigo-500 dark:hover:text-white transition-all transform hover:scale-110 active:scale-95"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-          </div>
+        <div className="h-full relative z-10 flex flex-col gap-3 overflow-hidden" style={{ paddingLeft: '0px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px' }}>
           
           {/* TOP ROW: MAP & INTELLIGENCE - 버블차트 우선 */}
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ paddingLeft: '24px' }}>
+          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0" style={{ paddingLeft: '12px' }}>
              
              {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ minHeight: '300px' }}>
@@ -146,11 +137,11 @@ export default function App() {
           </div>
 
           {/* BOTTOM ROW: SIMULATION ENGINE - 작은 화면에서 높이 축소, 버블차트 우선 */}
-          <div className="grid grid-cols-12 gap-6 flex-shrink-0" style={{ 
+          <div className="grid grid-cols-12 gap-3 flex-shrink-0" style={{ 
             height: 'clamp(380px, 35vh, 480px)',
             minHeight: '380px',
             maxHeight: '480px',
-            paddingLeft: '24px'
+            paddingLeft: '12px'
           }}>
              <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
                <SimulationEngine 

@@ -15,12 +15,35 @@ module.exports = {
         extend: {
             colors: {
                 aether: {
-                    bg: '#F8FAFC', // Slate 50
-                    'dark-bg': '#0B1120', // Deep dark blue/slate
-                    'dark-card': '#1E293B', // Slate 800
-                    'dark-subtext': '#94A3B8', // Slate 400
-                    atom: '#EF4444', // Red for ATOM
-                    one: '#3B82F6', // Blue for ATOM ONE
+                    // Light Mode
+                    bg: '#F8FAFC',
+                    // Dark Mode - Night-Navy Based Palette
+                    'dark-bg': '#080A10', // Primary deep navy-black background
+                    'dark-bg-alt': '#0C1018', // Alternative navy background
+                    'dark-bg-gradient-start': '#0C111A', // Gradient start
+                    'dark-bg-gradient-end': '#0D1422', // Gradient end
+                    'dark-surface': '#0F1419', // Surface layer
+                    'dark-card': '#11161D', // Card/panel background
+                    'dark-card-elevated': '#141A22', // Elevated card
+                    // Text Hierarchy - WCAG AA+ compliant (Pure White & Soft Gray)
+                    'dark-text': '#FFFFFF', // Primary text - Pure White
+                    'dark-text-secondary': '#C9D0DA', // Secondary text - Soft Gray
+                    'dark-text-tertiary': '#8FA0B5', // Tertiary text - Muted Blue-Gray
+                    'dark-text-muted': '#6B7A8F', // Muted text
+                    // Glass Surface Colors
+                    'dark-glass': 'rgba(255, 255, 255, 0.08)', // Base glass (8%)
+                    'dark-glass-elevated': 'rgba(255, 255, 255, 0.12)', // Elevated glass (12%)
+                    'dark-glass-highlight': 'rgba(255, 255, 255, 0.14)', // Highlight glass (14%)
+                    // Glass Borders & Rim Lights
+                    'dark-border': 'rgba(255, 255, 255, 0.10)', // Subtle border
+                    'dark-border-rim': 'rgba(255, 255, 255, 0.15)', // Rim light border
+                    'dark-glow': 'rgba(255, 255, 255, 0.04)', // Ambient glow
+                    // Point Colors - Blue-Violet Spectrum
+                    'point-primary': '#5A7FFF', // Blue-Violet
+                    'point-secondary': '#4ED6E6', // Cyan-Aqua
+                    // Brand Colors (Preserved)
+                    atom: '#f87171', // Red for ATOM
+                    one: '#60a5fa', // Blue for ATOM ONE
                     mixed: '#A855F7', // Purple for MIXED
                 }
             },

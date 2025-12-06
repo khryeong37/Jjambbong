@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { NodeData, FilterState } from '../types';
 import {
   Loader2,
@@ -76,6 +76,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 });
   const [isPanning, setIsPanning] = useState(false);
   const [showBiasLegend, setShowBiasLegend] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const wasDragged = useRef(false);
@@ -83,6 +84,17 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   // 마우스 위치 & 맵 크기 (노드 근접 스케일링용)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
+
+  // 다크 모드 감지
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -273,8 +285,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     return { renderableNodes: limitedNodes, activeCount: activeNodes.length };
   }, [nodes, filters]);
 
-  const isDark = document.documentElement.classList.contains('dark');
-
   return (
     <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ 
       height: '100%', 
@@ -284,7 +294,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       boxShadow: 'none',
       border: '1px solid rgba(255, 255, 255, 0.1)',
       ...(isDark ? {
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.95) 40%, rgba(15, 23, 42, 0.97) 100%)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.09) 100%)',
       } : {})
     }}>
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
@@ -342,11 +352,11 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
             <div className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-2">Node Bias</div>
             <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
               <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200">ATOM</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-sky-400"></div>
+              <div className="w-3 h-3 rounded-full bg-blue-400"></div>
               <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200">ATOMONE</span>
             </div>
             <div className="flex items-center gap-2">
@@ -433,9 +443,9 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
                       ${
                         isActive
                           ? node.bias === 'ATOM'
-                            ? 'bg-orange-500'
+                            ? 'bg-red-400'
                             : node.bias === 'ATOMONE'
-                            ? 'bg-sky-400'
+                            ? 'bg-blue-400'
                             : 'bg-purple-500'
                           : 'bg-gray-300 dark:bg-gray-700'
                       }
@@ -444,9 +454,9 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
                         isSelected
                           ? `ring-4 ring-white/90 dark:ring-white/60 ${
                               node.bias === 'ATOM'
-                                ? 'ring-offset-orange-500/50'
+                                ? 'ring-offset-red-400/50'
                                 : node.bias === 'ATOMONE'
-                                ? 'ring-offset-sky-500/50'
+                                ? 'ring-offset-blue-400/50'
                                 : 'ring-offset-purple-500/50'
                             } ring-offset-2 shadow-2xl`
                           : isActive
