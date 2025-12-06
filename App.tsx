@@ -113,23 +113,24 @@ export default function App() {
           paddingLeft: '0px', 
           paddingRight: '12px', 
           paddingTop: '12px', 
-          paddingBottom: '12px' // 필터 패널의 bottom-3 (12px)와 맞춤
+          paddingBottom: '12px' // 필터 패널의 bottom-3 (12px)와 정확히 맞춤
         }}>
           
-          {/* TOP ROW: MAP & INTELLIGENCE - 겹침 방지 반응형 구조 */}
+          {/* TOP ROW: MAP & INTELLIGENCE - 임팩트 맵 크기 유지, 백테스트만 축소 */}
           <div className="grid grid-cols-12 gap-3 min-h-0" style={{ 
             paddingLeft: '12px',
-            // BOTTOM ROW의 최소 높이(350px) + gap(12px) + 패딩(24px)을 고려하여 최대 높이 제한
+            // 임팩트 맵 크기 유지를 위해 flex: 1로 설정하고, 백테스트 패널이 줄어들도록
             flex: '1 1 0%',
-            minHeight: '300px',
-            maxHeight: 'calc(100% - 386px)', // BOTTOM ROW minHeight(350px) + gap(12px) + padding(24px)
+            minHeight: '400px', // 임팩트 맵 최소 크기 보장
+            // maxHeight는 동적으로 계산: 전체 높이 - (백테스트 최소 높이 + gap + padding)
+            maxHeight: 'calc(100% - 362px)', // BOTTOM ROW minHeight(300px) + gap(12px) + padding(24px) + 여유(26px)
             height: 'auto',
             overflow: 'hidden'
           }}>
              
-             {/* Impact Map - 반응형 최소 높이 조정 */}
+             {/* Impact Map - 크기 유지, 최소 높이 보장 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ 
-               minHeight: '300px',
+               minHeight: '400px', // 임팩트 맵 최소 크기 유지
                height: '100%',
                maxHeight: '100%'
              }}>
@@ -143,9 +144,9 @@ export default function App() {
                 />
              </div>
 
-             {/* Node Intelligence - 반응형 최소 높이 조정 */}
+             {/* Node Intelligence - 임팩트 맵과 함께 크기 유지 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0" style={{
-               minHeight: '300px',
+               minHeight: '400px',
                height: '100%',
                maxHeight: '100%'
              }}>
@@ -157,16 +158,16 @@ export default function App() {
              </div>
           </div>
 
-          {/* BOTTOM ROW: SIMULATION ENGINE - 필터 패널 하단과 정렬 */}
-          <div className="grid grid-cols-12 gap-3" style={{ 
+          {/* BOTTOM ROW: SIMULATION ENGINE - 화면 축소 시 높이만 줄어듦, 필터 패널 하단과 정렬 */}
+          <div className="grid grid-cols-12 gap-3 flex-shrink-0" style={{ 
             paddingLeft: '12px',
-            // 필터 패널의 bottom-3 (12px)와 맞추기 위해 하단 마진 없이 정렬
-            flex: '0 1 auto',
-            minHeight: 'clamp(350px, calc(100vh * 0.35), 400px)',
+            // 화면이 줄어들면 높이를 줄이되, 최소 높이는 유지
+            // flex-shrink-0으로 설정하여 TOP ROW가 먼저 축소되지 않도록
+            minHeight: 'clamp(300px, calc(100vh - 500px), 500px)', // 화면 높이에 따라 동적 조정, 최소 300px
             maxHeight: '500px',
-            height: 'clamp(350px, calc(100vh * 0.38), 500px)',
+            height: 'auto', // flex 컨테이너가 자동으로 높이 계산
             overflow: 'hidden',
-            // 필터 패널 하단과 정렬: 메인 컨텐츠 하단 패딩(12px)과 일치
+            // 필터 패널 하단(bottom-3 = 12px)과 정확히 맞추기 위해 marginBottom 없음
             marginBottom: '0'
           }}>
              <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
