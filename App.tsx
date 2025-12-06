@@ -106,8 +106,8 @@ export default function App() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[344px]'}`}>
-        <div className="h-full p-6 relative z-10 flex flex-col gap-6 overflow-hidden">
+      <main className={`flex-1 h-screen overflow-hidden relative transition-all duration-300 ${isSidebarCollapsed ? 'ml-28' : 'lg:ml-[336px]'}`}>
+        <div className="h-full relative z-10 flex flex-col gap-6 overflow-hidden" style={{ paddingLeft: '0px', paddingRight: '24px', paddingTop: '24px', paddingBottom: '24px' }}>
           
           {/* Theme Toggle */}
           <div className="absolute top-6 right-6 z-50">
@@ -121,7 +121,7 @@ export default function App() {
           </div>
           
           {/* TOP ROW: MAP & INTELLIGENCE - 버블차트 우선 */}
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ padding: '20px', margin: '-20px' }}>
+          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0" style={{ paddingLeft: '24px' }}>
              
              {/* Impact Map - 최우선: 작은 화면에서도 충분한 공간 확보 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ minHeight: '300px' }}>
@@ -146,15 +146,13 @@ export default function App() {
           </div>
 
           {/* BOTTOM ROW: SIMULATION ENGINE - 작은 화면에서 높이 축소, 버블차트 우선 */}
-          <div className="w-full flex-shrink-0" style={{ 
+          <div className="grid grid-cols-12 gap-6 flex-shrink-0" style={{ 
             height: 'clamp(380px, 35vh, 480px)',
             minHeight: '380px',
             maxHeight: '480px',
-            padding: '8px', 
-            margin: '-8px', 
-            marginTop: '0'
+            paddingLeft: '24px'
           }}>
-             <div className="h-full">
+             <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
                <SimulationEngine 
                   atomData={atomData}
                   oneData={oneData}

@@ -274,7 +274,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   const isDark = document.documentElement.classList.contains('dark');
-  
+
   return (
     <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ 
       height: '100%', 

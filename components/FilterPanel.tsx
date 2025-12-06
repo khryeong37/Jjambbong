@@ -18,17 +18,7 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
   const [showDescription, setShowDescription] = useState(false);
 
   const getSectionStyle = () => {
-    if (!open) return {
-      border: 'none',
-      borderRadius: '0',
-      background: 'transparent',
-      backdropFilter: 'none',
-      WebkitBackdropFilter: 'none',
-      boxShadow: 'none',
-      overflow: 'hidden'
-    };
-    
-    // Light mode
+    // Light mode - 닫혀 있을 때도 라운드된 사각형
     const lightStyle = {
       border: '1px solid rgba(255, 255, 255, 0.4)',
       borderRadius: '16px',

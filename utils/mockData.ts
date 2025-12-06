@@ -97,7 +97,7 @@ export const calculateSimulation = (config: SimulationConfig, marketData: Market
   }
   
   if (portfolioTimeline.length === 0) {
-    return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
+     return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0 };
   }
 
   // 3. Calculate final metrics (all in coin quantity)

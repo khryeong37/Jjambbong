@@ -253,7 +253,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
                >
                   <div className="text-[8px] text-gray-400 dark:text-gray-200 uppercase mb-1 font-bold">{item.label}</div>
                   <div className={`text-sm font-black ${item.color} node-intel-number`}>{item.value}</div>
-               </div>
+             </div>
              ))}
            </div>
 
@@ -281,8 +281,8 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
                       <Sparkles size={14} className="text-indigo-400" />
                     </div>
                     <p className="text-[11px] text-gray-200 leading-relaxed font-medium">
-                      {loading ? "Generating analysis..." : summary || "Select a node to view AI analysis."}
-                    </p>
+                   {loading ? "Generating analysis..." : summary || "Select a node to view AI analysis."}
+                 </p>
                  </div>
               </div>
            </div>

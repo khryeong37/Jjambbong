@@ -52,7 +52,7 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
     }
     
     lastUpdateRef.current = now;
-    
+
     if (isDual && Array.isArray(value)) {
       const [currentMin, currentMax] = value;
       if (dragging === 'min') {
@@ -254,14 +254,14 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
         }
       `}</style>
       <div style={containerStyle} className="transition-all duration-300">
-        <div style={sliderBaseStyle} ref={sliderRef}>
-          <div style={rangeBarStyle}>
-            <div style={rangeBarBeforeStyle}></div>
-            <div style={rangeBarAfterStyle}></div>
-          </div>
+      <div style={sliderBaseStyle} ref={sliderRef}>
+        <div style={rangeBarStyle}>
+          <div style={rangeBarBeforeStyle}></div>
+          <div style={rangeBarAfterStyle}></div>
+        </div>
           
-          {isDual && Array.isArray(value) ? (
-            <>
+        {isDual && Array.isArray(value) ? (
+          <>
               <div 
                 style={{ ...handleStyle, left: `${rangeStart}%`, transform: 'translate(-50%, -50%)' }} 
                 onMouseDown={(e) => handleMouseDown('min', e)} 
@@ -271,7 +271,7 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
                 className="group"
               >
                 <div style={getNubStyle('min')}></div>
-              </div>
+            </div>
               <div 
                 style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} 
                 onMouseDown={(e) => handleMouseDown('max', e)} 
@@ -281,9 +281,9 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
                 className="group"
               >
                 <div style={getNubStyle('max')}></div>
-              </div>
-            </>
-          ) : (
+            </div>
+          </>
+        ) : (
             <div 
               style={{ ...handleStyle, left: `${rangeEnd}%`, transform: 'translate(-50%, -50%)' }} 
               onMouseDown={(e) => handleMouseDown('single', e)} 
@@ -293,10 +293,10 @@ const GelSlider: React.FC<GelSliderProps> = ({ min, max, value, onChange, isDual
               className="group"
             >
               <div style={getNubStyle('single')}></div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+    </div>
     </>
   );
 };
