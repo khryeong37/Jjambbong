@@ -8,9 +8,10 @@ interface NodeIntelligenceProps {
   selectedNode: NodeData | null;
   slots: { id: string; node: NodeData | null; weight: number; color: string }[];
   setSlots: React.Dispatch<React.SetStateAction<{ id: string; node: NodeData | null; weight: number; color: string }[]>>;
+  isLoadingDetail?: boolean;
 }
 
-const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots, setSlots }) => {
+const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots, setSlots, isLoadingDetail = false }) => {
   const [summary, setSummary] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
@@ -92,6 +93,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
     { name: 'IBC', value: selectedNode.composition.ibc, color: '#A78BFA' },
     { name: 'Stake', value: selectedNode.composition.stake, color: '#4B5563' },
   ];
+  const historyData = selectedNode.history ?? [];
 
   return (
     <div key={animationKey} className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex flex-col relative overflow-hidden" style={{ 
@@ -138,6 +140,12 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
       <div className="flex-1 overflow-y-auto space-y-6 custom-scrollbar" style={{ minHeight: 0, maxHeight: '100%', padding: '1.5rem', paddingRight: '1.5rem', marginRight: '0' }}>
         
         {/* 1. Price & Net Flow Chart */}
+        {isLoadingDetail && (
+          <div className="text-[10px] font-semibold text-amber-500 px-6">
+            Fetching detailed history...
+          </div>
+        )}
+
         <div className="space-y-3 node-intel-section" style={{ animationDelay: '150ms' }}>
            <div className="flex items-center justify-between">
              <span className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Price vs Net Flow</span>
@@ -146,7 +154,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
            <div className="h-40 rounded-2xl p-4 relative overflow-hidden glass-input node-intel-chart" style={{ animationDelay: '200ms' }}>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/50 dark:to-black/20 pointer-events-none"></div>
               <ResponsiveContainer width="100%" height="100%">
-                 <ComposedChart data={selectedNode.history}>
+                 <ComposedChart data={historyData}>
                     <Tooltip 
                        contentStyle={{
                          backgroundColor: 'hsl(0 0% 100% / 0.8)', 
@@ -163,13 +171,26 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({ selectedNode, slots
                          fontWeight: 600
                        }}
                        labelStyle={{display: 'none'}}
+                       formatter={(value, name) => {
+                         if (name === 'price') {
+                           return [`${(value as number).toFixed(2)} Ξ`, 'Price'];
+                         }
+                         return [value as number, name];
+                       }}
                     />
+                    <XAxis dataKey="date" hide />
                     <Bar dataKey="netFlow" barSize={6} radius={[2, 2, 0, 0]}>
-                      {selectedNode.history.map((entry, index) => (
+                      {historyData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.netFlow > 0 ? '#EF4444' : '#0EA5E9'} fillOpacity={0.8} />
                       ))}
                     </Bar>
-                    <Line type="monotone" dataKey="price" stroke="#9CA3AF" strokeWidth={2} dot={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#9CA3AF"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                  </ComposedChart>
               </ResponsiveContainer>
            </div>

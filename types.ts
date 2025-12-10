@@ -32,7 +32,7 @@ export interface NodeData {
     stake: number;
   };
   
-  history: {
+  history?: {
     date: string;
     price: number;
     netFlow: number; // Positive = Buy, Negative = Sell

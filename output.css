@@ -2512,6 +2512,11 @@ input[type="date"].date-input-no-icon {
   color: rgb(255 255 255 / 0.7);
 }
 
+.text-amber-500 {
+  --tw-text-opacity: 1;
+  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
+
 .opacity-0 {
   opacity: 0;
 }

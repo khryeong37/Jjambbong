@@ -5,7 +5,7 @@ import ImpactMap from './components/ImpactMap';
 import NodeIntelligence from './components/NodeIntelligence';
 import SimulationEngine from './components/SimulationEngine';
 import GradientBackground from './components/GradientBackground';
-import { loadSwapNodes, loadLocalMarket } from './utils/swapLoader';
+import { loadSwapNodes, loadLocalMarket, loadNodeDetail } from './utils/swapLoader';
 import { NodeData, FilterState, MarketData } from './types';
 
 export default function App() {
@@ -68,7 +68,9 @@ export default function App() {
   };
 
   const [nodes, setNodes] = useState<NodeData[]>([]);
-  const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [nodeDetails, setNodeDetails] = useState<Record<string, NodeData>>({});
+  const [selectedNodeLoading, setSelectedNodeLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [apiStatus, setApiStatus] = useState<'loading' | 'live' | 'mock'>('loading');
   
@@ -87,12 +89,20 @@ export default function App() {
 
   // --- Fetch Data ---
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       setLoading(true);
       setApiStatus('loading');
 
       const valData = await loadSwapNodes(filters.dateRange);
+      if (cancelled) return;
       setNodes(valData);
+      setSelectedNodeId((prev) => {
+        if (prev && !valData.some((n) => n.id === prev)) {
+          return null;
+        }
+        return prev;
+      });
       setApiStatus('mock');
 
       const localMarket = loadLocalMarket();
@@ -102,7 +112,45 @@ export default function App() {
       setLoading(false);
     };
     loadData();
-  }, [filters.dateRange]); // 기간 필터 변경 시 데이터 재로드
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.dateRange]);
+
+  const selectedNodeSummary = useMemo(
+    () => nodes.find((node) => node.id === selectedNodeId) || null,
+    [nodes, selectedNodeId]
+  );
+
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) return null;
+    return nodeDetails[selectedNodeId] || selectedNodeSummary || null;
+  }, [nodeDetails, selectedNodeId, selectedNodeSummary]);
+
+  useEffect(() => {
+    if (!selectedNodeId) return;
+    if (nodeDetails[selectedNodeId]) return;
+    let cancelled = false;
+    setSelectedNodeLoading(true);
+    loadNodeDetail(selectedNodeId)
+      .then((detail) => {
+        if (cancelled) return;
+        setNodeDetails((prev) => ({ ...prev, [selectedNodeId]: detail }));
+      })
+      .catch((err) => {
+        console.error('Failed to fetch node detail', err);
+      })
+      .finally(() => {
+        if (!cancelled) setSelectedNodeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedNodeId, nodeDetails]);
+
+  const handleSelectNode = useCallback((node: NodeData | null) => {
+    setSelectedNodeId(node?.id ?? null);
+  }, []);
 
   return (
     <div className={`h-screen font-sans flex overflow-hidden relative text-sm`}>
@@ -157,7 +205,7 @@ export default function App() {
                   nodes={nodes} 
                   selectedNode={selectedNode} 
                   filters={filters} 
-                  onSelectNode={setSelectedNode} 
+                  onSelectNode={handleSelectNode} 
                   loading={loading}
                   apiStatus={apiStatus} 
                 />
@@ -173,6 +221,7 @@ export default function App() {
                   selectedNode={selectedNode}
                   slots={slots}
                   setSlots={setSlots}
+                  isLoadingDetail={selectedNodeLoading && !!selectedNodeId && !nodeDetails[selectedNodeId]}
                 />
              </div>
           </div>

@@ -18,3 +18,5 @@ View your app in AI Studio: https://ai.studio/apps/drive/17TogXIn-eSW9J3qIYc_RCn
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+> Note: The frontend now expects a backend at `/api`. During local development the Vite dev server proxies `/api` to `http://localhost:4000`. For production builds set `VITE_API_BASE_URL` to your deployed server URL.
