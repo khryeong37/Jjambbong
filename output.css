@@ -665,6 +665,20 @@ input[type="date"].date-input-no-icon {
   }
 }
 
+@keyframes nodePulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.35);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 @keyframes glow-pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.1),
@@ -2403,6 +2417,11 @@ input[type="date"].date-input-no-icon {
   color: rgb(90 127 255 / var(--tw-text-opacity, 1));
 }
 
+.text-amber-500 {
+  --tw-text-opacity: 1;
+  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
+
 .text-amber-600 {
   --tw-text-opacity: 1;
   color: rgb(217 119 6 / var(--tw-text-opacity, 1));
@@ -2510,11 +2529,6 @@ input[type="date"].date-input-no-icon {
 
 .text-white\/70 {
   color: rgb(255 255 255 / 0.7);
-}
-
-.text-amber-500 {
-  --tw-text-opacity: 1;
-  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
 }
 
 .opacity-0 {

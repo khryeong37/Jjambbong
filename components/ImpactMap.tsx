@@ -581,7 +581,7 @@ const NodeRenderer = memo(({ nodes, selectedNode, view, wasDragged, onSelectNode
       {nodes.map((node: any) => {
         const isSelected = selectedNode?.id === node.id;
         const isActive = node._isActive;
-        const finalScale = ((isSelected ? 1.2 : 1) / view.zoom);
+        const finalScale = 1 / view.zoom;
         
         const nodeStyle = {
           left: `${node.xPercent}%`,
@@ -593,7 +593,7 @@ const NodeRenderer = memo(({ nodes, selectedNode, view, wasDragged, onSelectNode
           transition: isSelected || isActive 
             ? 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1), height 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
             : 'none',
-          opacity: 0.6,
+          opacity: isSelected ? 1 : isActive ? 0.75 : 0.35,
           contain: 'layout style paint' as const, // CSS contain으로 렌더링 최적화
         };
 
@@ -621,9 +621,10 @@ const NodeRenderer = memo(({ nodes, selectedNode, view, wasDragged, onSelectNode
                 opacity: isActive ? 0.65 : 0.3,
                 boxShadow: 'none',
                 transition: isActive 
-                  ? 'background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, box-shadow 0.4s ease-out, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  ? 'background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, box-shadow 0.4s ease-out'
                   : 'none',
-                transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                transform: 'scale(1)',
+                animation: isSelected ? 'nodePulse 0.45s ease-out' : 'none',
                 ...(isSelected ? {
                   boxShadow: '0 0 0 4px rgba(255, 235, 59, 0.8), 0 0 20px rgba(255, 235, 59, 0.4)',
                 } : isActive ? {
