@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { NodeData, FilterState } from '../types';
 import {
   Loader2,
@@ -90,13 +90,36 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [showBiasLegend, setShowBiasLegend] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const wasDragged = useRef(false);
   const isDraggingNode = useRef(false);
+  const [hoveredNode, setHoveredNode] = useState<{ node: any; x: number; y: number } | null>(null);
 
   // 마우스 위치 & 맵 크기 (노드 근접 스케일링용)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Canvas 크기 동기화
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const element = mapRef.current;
+    const observer = new ResizeObserver(() => {
+      const rect = element.getBoundingClientRect();
+      const { width, height } = rect;
+      setMapSize({ width, height });
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
 
 
@@ -132,56 +155,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   const rafRef = useRef<number | null>(null);
   const pendingUpdateRef = useRef<{ dx: number; dy: number } | null>(null);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    // 항상 마우스 위치는 업데이트 (스로틀링)
-    if (mapRef.current && rafRef.current === null) {
-      rafRef.current = requestAnimationFrame(() => {
-        if (mapRef.current) {
-          const rect = mapRef.current.getBoundingClientRect();
-          setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-          setMapSize({ width: rect.width, height: rect.height });
-        }
-        rafRef.current = null;
-      });
-    }
-
-    // 팬닝 중일 때만 뷰 이동
-    if (!isPanning) return;
-    e.preventDefault();
-    if (!wasDragged.current) wasDragged.current = true;
-    const dx = e.clientX - lastMousePos.current.x;
-    const dy = e.clientY - lastMousePos.current.y;
-    
-    // 뷰 업데이트를 requestAnimationFrame으로 배치
-    pendingUpdateRef.current = { dx, dy };
-    if (rafRef.current === null) {
-      rafRef.current = requestAnimationFrame(() => {
-        if (pendingUpdateRef.current) {
-          setView((prev) => ({ 
-            ...prev, 
-            x: prev.x + pendingUpdateRef.current!.dx, 
-            y: prev.y + pendingUpdateRef.current!.dy 
-          }));
-          pendingUpdateRef.current = null;
-        }
-        rafRef.current = null;
-      });
-    }
-    
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  }, [isPanning]);
-
-  const handleMouseUpOrLeave = useCallback(() => {
-    setIsPanning(false);
-    isDraggingNode.current = false;
-    setMousePos(null);
-    // 정리
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    pendingUpdateRef.current = null;
-  }, []);
 
   const zoomWithCenter = (factor: number) => {
     if (!mapRef.current) return;
@@ -203,6 +176,20 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   const zoomIn = () => zoomWithCenter(1.3);
   const zoomOut = () => zoomWithCenter(1 / 1.3);
   const resetView = () => setView({ x: 0, y: 0, zoom: 1 });
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (wasDragged.current) {
+      wasDragged.current = false;
+      return;
+    }
+    const picked = getNodeAtPosition(e.clientX, e.clientY);
+    if (picked && picked.node._isActive) {
+      const isSelected = selectedNode?.id === picked.node.id;
+      onSelectNode(isSelected ? null : picked.node);
+    } else {
+      onSelectNode(null);
+    }
+  };
 
   const processedNodes = useMemo(() => {
     if (!nodes || nodes.length === 0) {
@@ -342,9 +329,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   }, [nodes, filters]);
 
   // Viewport 기반 가상화: 화면에 보이는 노드만 렌더링
-  const [viewportBounds, setViewportBounds] = useState({ left: 0, top: 0, right: 100, bottom: 100 });
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-
   // LOD (Level of Detail): 줌 레벨에 따라 작은 노드 필터링
   const visibleNodes = useMemo(() => {
     const { renderableNodes } = processedNodes;
@@ -362,6 +346,132 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       return node.size >= minVisibleSize;
     });
   }, [processedNodes, view.zoom]);
+
+  const getNodeAtPosition = useCallback((clientX: number, clientY: number) => {
+    if (!mapRef.current || !mapSize) return null;
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    for (let i = visibleNodes.length - 1; i >= 0; i--) {
+      const node = visibleNodes[i] as any;
+      const baseX = (node.xPercent / 100) * mapSize.width;
+      const baseY = mapSize.height - (node.yPercent / 100) * mapSize.height;
+      const screenX = view.x + baseX * view.zoom;
+      const screenY = view.y + baseY * view.zoom;
+      const radius = node.size;
+      const dx = x - screenX;
+      const dy = y - screenY;
+      if (dx * dx + dy * dy <= radius * radius) {
+        return { node, x: screenX, y: screenY };
+      }
+    }
+    return null;
+  }, [mapRef, mapSize, visibleNodes, view]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (mapRef.current && rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(() => {
+        if (mapRef.current) {
+          const rect = mapRef.current.getBoundingClientRect();
+          setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+          setMapSize({ width: rect.width, height: rect.height });
+        }
+        rafRef.current = null;
+      });
+    }
+
+    const picked = getNodeAtPosition(e.clientX, e.clientY);
+    setHoveredNode(picked);
+
+    if (!isPanning) return;
+    e.preventDefault();
+    if (!wasDragged.current) wasDragged.current = true;
+    const dx = e.clientX - lastMousePos.current.x;
+    const dy = e.clientY - lastMousePos.current.y;
+
+    pendingUpdateRef.current = { dx, dy };
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(() => {
+        if (pendingUpdateRef.current) {
+          setView((prev) => ({
+            ...prev,
+            x: prev.x + pendingUpdateRef.current!.dx,
+            y: prev.y + pendingUpdateRef.current!.dy
+          }));
+          pendingUpdateRef.current = null;
+        }
+        rafRef.current = null;
+      });
+    }
+
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  }, [getNodeAtPosition, isPanning]);
+
+  const handleMouseUpOrLeave = useCallback(() => {
+    setIsPanning(false);
+    isDraggingNode.current = false;
+    setMousePos(null);
+    setHoveredNode(null);
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    pendingUpdateRef.current = null;
+  }, []);
+
+  // Canvas 렌더링
+  useEffect(() => {
+    if (!canvasRef.current || !mapSize) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, mapSize.width, mapSize.height);
+
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.zoom, view.zoom);
+
+    visibleNodes.forEach((node: any) => {
+      const baseX = (node.xPercent / 100) * mapSize.width;
+      const baseY = mapSize.height - (node.yPercent / 100) * mapSize.height;
+      const radius = node.size / view.zoom;
+
+      const isSelected = selectedNode?.id === node.id;
+      const isHovered = hoveredNode?.node.id === node.id;
+      const isActive = node._isActive;
+
+      const color = isActive
+        ? node.bias === 'ATOM'
+          ? '#EF4444'
+          : node.bias === 'ATOMONE'
+          ? '#0EA5E9'
+          : '#A855F7'
+        : '#94a3b8';
+
+      ctx.beginPath();
+      ctx.arc(baseX, baseY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = isSelected ? 0.95 : isActive ? 0.7 : 0.35;
+      ctx.shadowBlur = isSelected ? 12 : 0;
+      ctx.shadowColor = isSelected ? 'rgba(255, 235, 59, 0.6)' : 'transparent';
+      ctx.fill();
+
+      if (isHovered || isSelected) {
+        ctx.lineWidth = 2 / view.zoom;
+        ctx.strokeStyle = isSelected ? '#FACC15' : 'rgba(255,255,255,0.8)';
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    });
+
+    ctx.restore();
+  }, [visibleNodes, view, mapSize, selectedNode, hoveredNode]);
 
   return (
     <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ 
@@ -405,6 +515,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
+        onClick={handleCanvasClick}
       >
         {/* Axes labels */}
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 dark:text-white/80 rotate-[-90deg] origin-left pointer-events-none">
@@ -497,17 +608,10 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           </div>
         )}
 
-        <div
-          className="w-full h-full"
-          style={{
-            transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
-            transition: isPanning ? 'none' : 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            transformOrigin: 'top left',
-          }}
-        >
+        <div className="w-full h-full">
           <div className="w-full h-full relative p-4 box-border">
             {/* Grid */}
-            <div className="absolute inset-4 grid grid-cols-5 grid-rows-5">
+            <div className="absolute inset-4 grid grid-cols-5 grid-rows-5 pointer-events-none">
               {Array.from({ length: 25 }).map((_, i) => (
                 <div
                   key={i}
@@ -519,18 +623,24 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
             </div>
 
 
-            {/* Nodes - 최적화된 렌더링 */}
-            <NodeRenderer
-              nodes={visibleNodes}
-              selectedNode={selectedNode}
-              view={view}
-              wasDragged={wasDragged}
-              onSelectNode={onSelectNode}
-            />
+            {/* Canvas 기반 버블 렌더링 */}
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+
+            {/* Hover label */}
+            {hoveredNode && (
+              <div
+                className="absolute pointer-events-none bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-lg"
+                style={{
+                  left: hoveredNode.x + 10,
+                  top: hoveredNode.y - 20,
+                  transform: 'translate(-50%, -100%)',
+                }}
+              >
+                {hoveredNode.node.name}
+              </div>
+            )}
           </div>
         </div>
-        <div ref={mapContainerRef} className="absolute inset-0 pointer-events-none" />
-
         {/* Zoom controls */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 z-20" style={{ pointerEvents: 'auto' }}>
           <button
@@ -559,103 +669,5 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     </div>
   );
 };
-
-// 최적화된 노드 렌더러 컴포넌트 (메모이제이션)
-interface NodeRendererProps {
-  nodes: any[];
-  selectedNode: NodeData | null;
-  view: { x: number; y: number; zoom: number };
-  wasDragged: React.MutableRefObject<boolean>;
-  onSelectNode: (node: NodeData | null) => void;
-}
-
-const NodeRenderer = memo(({ nodes, selectedNode, view, wasDragged, onSelectNode }: NodeRendererProps) => {
-  const handleNodeClick = useCallback((e: React.MouseEvent, node: any, isSelected: boolean, isActive: boolean) => {
-    if (wasDragged.current || !isActive) return;
-    e.stopPropagation();
-    onSelectNode(isSelected ? null : node);
-  }, [wasDragged, onSelectNode]);
-
-  return (
-    <>
-      {nodes.map((node: any) => {
-        const isSelected = selectedNode?.id === node.id;
-        const isActive = node._isActive;
-        const finalScale = 1 / view.zoom;
-        
-        const nodeStyle = {
-          left: `${node.xPercent}%`,
-          bottom: `${node.yPercent}%`,
-          width: `${node.size}px`,
-          height: `${node.size}px`,
-          transform: `translate(-50%, 50%) scale(${finalScale})`,
-          willChange: isSelected || isActive ? 'transform, opacity' : 'auto',
-          transition: isSelected || isActive 
-            ? 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1), height 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
-            : 'none',
-          opacity: isSelected ? 1 : isActive ? 0.75 : 0.35,
-          contain: 'layout style paint' as const, // CSS contain으로 렌더링 최적화
-        };
-
-        return (
-          <div
-            key={node.id}
-            className={`absolute rounded-full group ${
-              isActive ? 'cursor-pointer hover:!z-20' : 'pointer-events-none'
-            } ${isSelected ? 'z-10' : 'z-0'}`}
-            style={nodeStyle}
-            onClick={(e) => handleNodeClick(e, node, isSelected, isActive)}
-          >
-            <div
-              className={`relative w-full h-full rounded-full ${
-                isActive ? '' : 'bg-gray-300 dark:bg-gray-700'
-              }`}
-              style={{
-                backgroundColor: isActive 
-                  ? (node.bias === 'ATOM'
-                      ? '#EF4444'
-                      : node.bias === 'ATOMONE'
-                      ? '#0EA5E9'
-                      : '#A855F7')
-                  : undefined,
-                opacity: isActive ? 0.65 : 0.3,
-                boxShadow: 'none',
-                transition: isActive 
-                  ? 'background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out, box-shadow 0.4s ease-out'
-                  : 'none',
-                transform: 'scale(1)',
-                animation: isSelected ? 'nodePulse 0.45s ease-out' : 'none',
-                ...(isSelected ? {
-                  boxShadow: '0 0 0 4px rgba(255, 235, 59, 0.8), 0 0 20px rgba(255, 235, 59, 0.4)',
-                } : isActive ? {
-                  boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.3)',
-                } : {})
-              }}
-            />
-            {isActive && (
-              <div
-                className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none delay-300 origin-bottom"
-                style={{ transform: `scale(${1 / view.zoom})` }}
-              >
-                {node.name}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </>
-  );
-}, (prevProps, nextProps) => {
-  // 커스텀 비교 함수로 불필요한 리렌더링 방지
-  return (
-    prevProps.nodes.length === nextProps.nodes.length &&
-    prevProps.selectedNode?.id === nextProps.selectedNode?.id &&
-    prevProps.view.zoom === nextProps.view.zoom &&
-    prevProps.view.x === nextProps.view.x &&
-    prevProps.view.y === nextProps.view.y
-  );
-});
-
-NodeRenderer.displayName = 'NodeRenderer';
 
 export default ImpactMap;
