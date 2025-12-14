@@ -1,6 +1,20 @@
 import { NodeData, MarketData } from '../types';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim();
+function inferLocalApiBase() {
+  if (typeof window === 'undefined') return '';
+  const { protocol, hostname, port } = window.location;
+  if (protocol === 'file:') return 'http://localhost:4000';
+  if (hostname && hostname !== 'localhost') {
+    return `${protocol}//${hostname}:4000`;
+  }
+  if (!port || port === '3000') {
+    return '';
+  }
+  return `${protocol}//${hostname}:4000`;
+}
+
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL || '').trim() || inferLocalApiBase();
 const NODE_LIMIT = Number(import.meta.env.VITE_NODE_LIMIT ?? '500') || 500;
 
 const buildApiUrl = (
@@ -52,6 +66,21 @@ export const loadNodeDetail = async (id: string): Promise<NodeData> => {
     throw new Error(`Failed to load node detail: ${res.status}`);
   }
   return (await res.json()) as NodeData;
+};
+
+export const loadMarketData = async (): Promise<{
+  atom: MarketData;
+  atone: MarketData;
+}> => {
+  const endpoint = '/api/market';
+  const url = API_BASE_URL
+    ? `${API_BASE_URL.replace(/\/$/, '')}${endpoint}`
+    : endpoint;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to load market data: ${res.status}`);
+  }
+  return (await res.json()) as { atom: MarketData; atone: MarketData };
 };
 
 export const loadLocalMarket = (): { atom: MarketData; one: MarketData } => {

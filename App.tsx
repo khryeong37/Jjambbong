@@ -5,7 +5,7 @@ import ImpactMap from './components/ImpactMap';
 import NodeIntelligence from './components/NodeIntelligence';
 import SimulationEngine from './components/SimulationEngine';
 import GradientBackground from './components/GradientBackground';
-import { loadSwapNodes, loadLocalMarket, loadNodeDetail } from './utils/swapLoader';
+import { loadSwapNodes, loadLocalMarket, loadNodeDetail, loadMarketData } from './utils/swapLoader';
 import { NodeData, FilterState, MarketData } from './types';
 
 export default function App() {
@@ -41,10 +41,10 @@ export default function App() {
 
   const initialFilters: FilterState = {
     dateRange: { start: initialStartDate, end: initialEndDate },
-    totalVolume: [0, 1000000], // CSV 분석 결과 최대값 526,593.38을 고려하여 확대
-    avgTradeSize: [0, 100000], // CSV 분석 결과 최대값 52,775.71을 고려하여 확대
+    totalVolume: [0, 2000000], // DuckDB 기준 추가 여유
+    avgTradeSize: [0, 200000], // DuckDB 기준 추가 여유
     netBuyRatio: [-1, 1],
-    txCount: [0, 100], // CSV 분석 결과 최대값 52를 고려하여 확대
+    txCount: [0, 500], // DuckDB 집계 기준 최대값 확대
     atomShare: [0, 1],
     oneShare: [0, 1],
     ibcShare: [0, 1],
@@ -94,28 +94,54 @@ export default function App() {
       setLoading(true);
       setApiStatus('loading');
 
-      const valData = await loadSwapNodes(filters.dateRange);
-      if (cancelled) return;
-      setNodes(valData);
-      setSelectedNodeId((prev) => {
-        if (prev && !valData.some((n) => n.id === prev)) {
-          return null;
+      try {
+        const valData = await loadSwapNodes(filters.dateRange);
+        if (cancelled) return;
+        setNodes(valData);
+        setSelectedNodeId((prev) => {
+          if (prev && !valData.some((n) => n.id === prev)) {
+            return null;
+          }
+          return prev;
+        });
+        setApiStatus('live');
+      } catch (error) {
+        console.error('Failed to load nodes, falling back to mock data', error);
+        setApiStatus('mock');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
-        return prev;
-      });
-      setApiStatus('mock');
-
-      const localMarket = loadLocalMarket();
-      setAtomData(localMarket.atom);
-      setOneData(localMarket.one);
-
-      setLoading(false);
+      }
     };
     loadData();
     return () => {
       cancelled = true;
     };
   }, [filters.dateRange]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMarket = async () => {
+      try {
+        const market = await loadMarketData();
+        if (cancelled) return;
+        setAtomData(market.atom);
+        setOneData(market.atone);
+      } catch (error) {
+        console.error('Failed to fetch market data, using local mock', error);
+        if (!cancelled) {
+          const localMarket = loadLocalMarket();
+          setAtomData(localMarket.atom);
+          setOneData(localMarket.one);
+        }
+      }
+    };
+    fetchMarket();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selectedNodeSummary = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,

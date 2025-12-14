@@ -192,8 +192,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   };
 
   const processedNodes = useMemo(() => {
-    if (!nodes || nodes.length === 0) {
-      return { renderableNodes: [] as any[], activeCount: 0 };
+    if (!Array.isArray(nodes) || nodes.length === 0) {
+      return { renderableNodes: [] as any[], activeCount: 0, filteredCount: 0 };
     }
 
     const enrichedNodes = nodes.map((node) => {
@@ -320,11 +320,12 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     // 노드 수 제한 완전히 제거 - 모든 노드 표시
     const limitedNodes = renderableNodes;
 
-    return { 
-      renderableNodes: limitedNodes, 
+    return {
+      renderableNodes: limitedNodes,
       activeCount: activeNodes.length,
+      filteredCount: activeNodes.length,
       roiRange: { min: roiP5, max: roiP95, range: roiRange },
-      netFlowRange: { min: netFlowP5, max: netFlowP95, range: netFlowRange }
+      netFlowRange: { min: netFlowP5, max: netFlowP95, range: netFlowRange },
     };
   }, [nodes, filters]);
 
@@ -601,10 +602,16 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           </div>
         )}
 
-        {!loading && processedNodes.activeCount === 0 && (
+        {!loading && processedNodes.renderableNodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center flex-col text-gray-400 dark:text-white/70 z-30">
             <ShieldAlert className="w-10 h-10 mb-2" />
-            <span className="font-semibold">No nodes match filters.</span>
+            {apiStatus !== 'live' ? (
+              <span className="font-semibold text-center px-8">
+                서버에서 데이터를 가져오지 못했습니다. 백엔드(포트 4000)가 실행 중인지 확인해주세요.
+              </span>
+            ) : (
+              <span className="font-semibold">No nodes match filters.</span>
+            )}
           </div>
         )}
 
