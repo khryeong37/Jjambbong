@@ -1,10 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { FilterState } from '../types';
 import { ChevronDown, ChevronUp, Zap, Calendar, RefreshCcw, SlidersHorizontal, BarChart2, Share2, Activity, Target, DollarSign, HelpCircle, X } from 'lucide-react';
 import GelSlider from './GelSlider';
 
+const DATE_PRESETS = [
+  { label: 'ALL', days: null },
+  { label: '7D', days: 7 },
+  { label: '15D', days: 15 },
+  { label: '30D', days: 30 },
+  { label: '60D', days: 60 },
+];
+
 interface FilterPanelProps {
   tempFilters: FilterState;
+  appliedFilters: FilterState;
   setTempFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   applyFilters: () => void;
   resetFilters: () => void;
@@ -12,12 +22,18 @@ interface FilterPanelProps {
   dateBounds: { start: string; end: string };
 }
 
-const FilterSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode; isOpen?: boolean; description?: string }> = ({ title, icon: Icon, children, isOpen = false, description }) => {
+const FilterSection: React.FC<{
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  isOpen?: boolean;
+  description?: string;
+  summary?: string;
+  onHelp?: (info: { title: string; description: string; anchor: DOMRect }) => void;
+}> = ({ title, icon: Icon, children, isOpen = false, description, summary, onHelp }) => {
   const [open, setOpen] = useState(isOpen);
-  const [showDescription, setShowDescription] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>(0);
-
   // Measure content height only when opening/closing
   useEffect(() => {
     if (open && contentRef.current) {
@@ -81,7 +97,8 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowDescription(!showDescription);
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                onHelp?.({ title, description, anchor: rect });
               }}
               className="p-1 rounded-full hover:bg-white/20 transition-colors duration-200"
               aria-label="Show description"
@@ -97,22 +114,9 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
           <ChevronDown size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors duration-200" />
         </div>
       </button>
-      {showDescription && description && (
-        <div className="px-4 py-3 mx-4 mb-3 rounded-xl relative animate-in fade-in slide-in-from-top-2 duration-300" style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%)',
-          backdropFilter: 'blur(12px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(196, 181, 253, 0.15)'
-        }}>
-          <button
-            onClick={() => setShowDescription(false)}
-            className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors"
-            aria-label="Close description"
-          >
-            <X size={12} className="text-gray-500" />
-          </button>
-          <p className="text-[11px] text-gray-700 pr-6">{description}</p>
+      {!open && summary && (
+        <div className="px-4 pt-0 pb-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+          {summary}
         </div>
       )}
       <div 
@@ -146,8 +150,53 @@ const FilterSection: React.FC<{ title: string; icon: React.ElementType; children
   );
 };
 
+const FilterSummary: React.FC<{ applied: FilterState }> = ({ applied }) => {
+  const { dateRange, totalVolume, txCount, netBuyRatio, atomShare, timingType } = applied;
+  const chips = [
+    {
+      label: '기간',
+      value: `${dateRange.start.slice(5)} ~ ${dateRange.end.slice(5)}`,
+    },
+    {
+      label: '규모',
+      value: `${totalVolume[0].toLocaleString()}~${totalVolume[1].toLocaleString()}`,
+    },
+    {
+      label: '거래횟수',
+      value: `${txCount[0]}~${txCount[1]}`,
+    },
+    {
+      label: 'Net Flow',
+      value: `${netBuyRatio[0].toFixed(2)}~${netBuyRatio[1].toFixed(2)}`,
+    },
+    {
+      label: 'Chain Bias',
+      value: `${Math.round(atomShare[0] * 100)}~${Math.round(atomShare[1] * 100)}% ATOM`,
+    },
+    {
+      label: 'Timing',
+      value: timingType === 'ALL' ? 'ALL' : timingType,
+    },
+  ];
+
+  return (
+    <div className="w-full flex flex-wrap justify-center gap-2 text-center">
+      {chips.map((chip) => (
+        <div
+          key={`${chip.label}-${chip.value}`}
+          className="px-3 py-1 rounded-full text-[10px] font-semibold text-gray-700 bg-white/70 shadow-sm"
+        >
+          <span className="text-gray-500 mr-1">{chip.label}</span>
+          <span>{chip.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const FilterPanel: React.FC<FilterPanelProps> = ({
   tempFilters,
+  appliedFilters,
   setTempFilters,
   applyFilters,
   resetFilters,
@@ -156,6 +205,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
+  const [helpBubble, setHelpBubble] = useState<{ title: string; description: string; anchor: DOMRect } | null>(null);
 
   const clampDate = (date: Date) => {
     const min = new Date(dateBounds.start);
@@ -173,19 +223,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   const clampDateString = (value: string, fallback: string) =>
     formatDate(parseOrBound(value, fallback));
 
-  const setDatePreset = (days: number) => {
-      const endRaw = new Date(dateBounds.end);
-      const startRaw = new Date(endRaw);
-      startRaw.setDate(startRaw.getDate() - (days - 1));
-      const clampedStart = clampDate(startRaw);
-      const clampedEnd = clampDate(endRaw);
-      setTempFilters(prev => ({
-          ...prev,
-          dateRange: {
-              start: formatDate(clampedStart),
-              end: formatDate(clampedEnd)
-          }
-      }));
+  const computePresetRange = (days: number | null) => {
+    if (days === null) {
+      return {
+        start: dateBounds.start,
+        end: dateBounds.end,
+      };
+    }
+    const endRaw = new Date(dateBounds.end);
+    const startRaw = new Date(endRaw);
+    startRaw.setDate(startRaw.getDate() - (days - 1));
+    const clampedStart = clampDate(startRaw);
+    const clampedEnd = clampDate(endRaw);
+    return {
+      start: formatDate(clampedStart),
+      end: formatDate(clampedEnd),
+    };
+  };
+
+  const setDatePreset = (days: number | null) => {
+    const nextRange = computePresetRange(days);
+    setTempFilters((prev) => ({
+      ...prev,
+      dateRange: nextRange,
+    }));
   };
 
   const handleDateClick = (ref: React.RefObject<HTMLInputElement>) => {
@@ -193,6 +254,82 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       (ref.current as HTMLInputElement).showPicker();
     }
   };
+
+  const activePreset = useMemo(() => {
+    return DATE_PRESETS.find((preset) => {
+      const range = computePresetRange(preset.days);
+      return (
+        range.start === tempFilters.dateRange.start &&
+        range.end === tempFilters.dateRange.end
+      );
+    });
+  }, [tempFilters.dateRange, dateBounds]);
+
+  const hasPendingChanges = useMemo(() => {
+    return JSON.stringify(tempFilters) !== JSON.stringify(appliedFilters);
+  }, [tempFilters, appliedFilters]);
+
+  const summaryTime = useMemo(() => {
+    const start = tempFilters.dateRange.start.slice(5);
+    const end = tempFilters.dateRange.end.slice(5);
+    const label = activePreset?.label ? ` (${activePreset.label})` : '';
+    return `${start} → ${end}${label}`;
+  }, [tempFilters.dateRange, activePreset]);
+
+  const summaryScale = useMemo(() => {
+    const vol = `${tempFilters.totalVolume[0].toLocaleString()}~${tempFilters.totalVolume[1].toLocaleString()}`;
+    const avg = `${tempFilters.avgTradeSize[0].toLocaleString()}~${tempFilters.avgTradeSize[1].toLocaleString()}`;
+    return `VOL ${vol} / AVG ${avg}`;
+  }, [tempFilters.totalVolume, tempFilters.avgTradeSize]);
+
+  const summaryBehavior = useMemo(() => {
+    const net = `${tempFilters.netBuyRatio[0].toFixed(2)}~${tempFilters.netBuyRatio[1].toFixed(2)}`;
+    const tx = `${tempFilters.txCount[0]}~${tempFilters.txCount[1]}`;
+    return `NET ${net} / TX ${tx}`;
+  }, [tempFilters.netBuyRatio, tempFilters.txCount]);
+
+  const summaryChain = useMemo(() => {
+    const atom = `${Math.round(tempFilters.atomShare[0] * 100)}~${Math.round(tempFilters.atomShare[1] * 100)}%`;
+    const atone = `${Math.round(tempFilters.oneShare[0] * 100)}~${Math.round(tempFilters.oneShare[1] * 100)}%`;
+    const ibc = `${Math.round(tempFilters.ibcShare[0] * 100)}~${Math.round(tempFilters.ibcShare[1] * 100)}%`;
+    return `ATOM ${atom} / ATONE ${atone} / IBC ${ibc}`;
+  }, [tempFilters.atomShare, tempFilters.oneShare, tempFilters.ibcShare]);
+
+  const summaryActivity = useMemo(() => {
+    const days = `${tempFilters.activeDays[0]}~${tempFilters.activeDays[1]}d`;
+    return `${days} / ${tempFilters.recentActivity}`;
+  }, [tempFilters.activeDays, tempFilters.recentActivity]);
+
+  const summaryImpact = useMemo(() => {
+    const aii = `${tempFilters.aiiScore[0]}~${tempFilters.aiiScore[1]}`;
+    const corr = `${tempFilters.correlation[0].toFixed(1)}~${tempFilters.correlation[1].toFixed(1)}`;
+    return `AII ${aii} / ${tempFilters.timingType} / Corr ${corr}`;
+  }, [tempFilters.aiiScore, tempFilters.timingType, tempFilters.correlation]);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHelpBubble(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
+  const helpPosition = useMemo(() => {
+    if (!helpBubble) return null;
+    if (typeof window === 'undefined') return null;
+    const width = 280;
+    const scrollX = window.scrollX || 0;
+    const scrollY = window.scrollY || 0;
+    let left = helpBubble.anchor.right + scrollX + 16;
+    if (left + width > window.innerWidth - 16) {
+      left = helpBubble.anchor.left + scrollX - width - 16;
+    }
+    let top = helpBubble.anchor.top + scrollY - 8;
+    if (top < 16) top = 16;
+    return { top, left, width };
+  }, [helpBubble]);
 
   return (
     <div className="h-full flex flex-col glass-card-light rounded-[32px] relative overflow-hidden" style={{ 
@@ -206,22 +343,25 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     }}>
       
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/20 flex items-center justify-between relative backdrop-blur-sm" style={{
+      <div className="px-6 pt-4 pb-2 border-b border-white/20 flex flex-col gap-2 relative backdrop-blur-sm" style={{
         background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         boxShadow: 'none'
       }}>
-        <div className="flex items-center gap-3">
-          <h1 className="font-bold text-gray-900 leading-none text-sm">FILTER</h1>
+        <div className="w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="font-bold text-gray-900 leading-none text-sm">FILTER</h1>
+          </div>
+          <button onClick={resetFilters} className="text-[9px] font-bold text-gray-700 hover:text-red-600 flex items-center gap-1.5 px-2 py-1 rounded-full glass-button transition-all" style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}>
+            <RefreshCcw size={10} /> Reset
+          </button>
         </div>
-        <button onClick={resetFilters} className="text-[9px] font-bold text-gray-700 hover:text-red-600 flex items-center gap-1.5 px-2 py-1 rounded-full glass-button transition-all" style={{
-          background: 'rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)'
-        }}>
-          <RefreshCcw size={10} /> Reset
-        </button>
+        <FilterSummary applied={appliedFilters} />
       </div>
 
       {/* Scrollable Content */}
@@ -231,17 +371,18 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       }}>
         
         {/* 0. TIME PERIOD */}
-        <div className="rounded-2xl p-5 mb-5 relative" style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%)',
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-          boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 4px 16px rgba(196, 181, 253, 0.15)'
-        }}>
-           <div className="flex items-center gap-2 text-gray-700 mb-3">
-             <div className="p-1.5 bg-white rounded-lg shadow-sm"><Calendar size={12} className="text-gray-500" /></div>
-            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-800">Time Period</span>
-           </div>
+        <FilterSection
+          title="Time Range"
+          icon={Calendar}
+          description="조회 기간을 지정하면 그 구간 안에서만 모든 지표가 다시 계산됩니다."
+          summary={summaryTime}
+          isOpen
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
            <div className="flex gap-2 text-[11px] text-gray-700 font-medium glass-input p-3 rounded-xl items-center justify-between mb-3 overflow-hidden">
              <input 
                ref={startDateRef}
@@ -288,65 +429,92 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                max={dateBounds.end}
              />
            </div>
-           <div className="grid grid-cols-4 gap-1.5">
-            {[3, 7, 30].map((d) => (
-              <button key={d} onClick={() => setDatePreset(d)} className="py-2 rounded-xl text-[10px] font-bold glass-button text-gray-700 hover:text-gray-900" style={{
-                background: 'rgba(255, 255, 255, 0.3)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.4)'
-              }}>
-                {d}D
+           <div className="grid grid-cols-5 gap-1.5">
+            {DATE_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => setDatePreset(preset.days)}
+                className={`py-2 rounded-xl text-[10px] font-bold glass-button transition-all duration-200 ${
+                  activePreset?.label === preset.label ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'
+                }`}
+                style={
+                  activePreset?.label === preset.label
+                    ? {
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        border: '2px solid #10b981',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                      }
+                    : {
+                        background: 'rgba(255, 255, 255, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                      }
+                }
+              >
+                {preset.label}
               </button>
             ))}
-            <button
-              onClick={() =>
-                setTempFilters(prev => ({
-                  ...prev,
-                  dateRange: { start: dateBounds.start, end: dateBounds.end },
-                }))
-              }
-              className="py-2 rounded-xl text-[10px] font-bold glass-button text-gray-700 hover:text-gray-900"
-              style={{
-                background: 'rgba(255, 255, 255, 0.3)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
-              }}
-            >
-              ALL
-            </button>
           </div>
-        </div>
+        </FilterSection>
 
         {/* 1. SCALE */}
-        <FilterSection title="Scale" icon={DollarSign} isOpen={false} description="거래 규모 및 거래량 지표를 기준으로 노드를 필터링합니다. Total Tx Quantity는 기간 내 매수·매도 합계(토큰 수량)이며, Average Tx Size는 총 거래 수량을 거래 횟수로 나눈 평균 거래 크기입니다.">
+        <FilterSection
+          title="Scale"
+          icon={DollarSign}
+          isOpen={false}
+          description="거래 규모 및 거래량 지표를 기준으로 노드를 필터링합니다. Total Tx Quantity는 기간 내 매수·매도 합계(토큰 수량)이며, Average Tx Size는 총 거래 수량을 거래 횟수로 나눈 평균 거래 크기입니다."
+          summary={summaryScale}
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Tx Quantity</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.totalVolume[0].toLocaleString()} ~ {tempFilters.totalVolume[1].toLocaleString()}</span></div>
             <div style={{ paddingTop: '8px', paddingBottom: '8px', marginTop: '-4px', marginBottom: '-4px' }}>
-              <GelSlider isDual min={0} max={1000000} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
+              <GelSlider isDual min={0} max={2000000} value={tempFilters.totalVolume} onChange={(v) => setTempFilters(p => ({...p, totalVolume: v as [number, number]}))} />
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Average Tx Size</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.avgTradeSize[0].toLocaleString()} ~ {tempFilters.avgTradeSize[1].toLocaleString()}</span></div>
-            <GelSlider isDual min={0} max={100000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
+            <GelSlider isDual min={0} max={200000} value={tempFilters.avgTradeSize} onChange={(v) => setTempFilters(p => ({...p, avgTradeSize: v as [number, number]}))} />
           </div>
         </FilterSection>
 
         {/* 2. BEHAVIOR */}
-        <FilterSection title="Behavior" icon={BarChart2} description="거래 패턴 및 거래 빈도를 기준으로 노드를 필터링합니다. Net Buy Ratio는 -1(순매도)부터 +1(순매수)까지의 범위로, 0을 기준으로 매수/매도 비율을 나타냅니다. Tx Count는 기간 내 거래 횟수 범위를 설정합니다.">
+        <FilterSection
+          title="Behavior"
+          icon={BarChart2}
+          description="거래 패턴 및 거래 빈도를 기준으로 노드를 필터링합니다. Net Buy Ratio는 -1(순매도)부터 +1(순매수)까지 범위를 가지며, Tx Count는 기간 내 거래 횟수 범위를 나타냅니다."
+          summary={summaryBehavior}
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Net Buy Ratio</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.netBuyRatio[0].toFixed(1)} ~ {tempFilters.netBuyRatio[1].toFixed(1)}</span></div>
               <GelSlider isDual min={-1} max={1} value={tempFilters.netBuyRatio} onChange={(v) => setTempFilters(p => ({...p, netBuyRatio: v as [number, number]}))} />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Tx Count</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.txCount[0]} ~ {tempFilters.txCount[1]}</span></div>
-              <GelSlider isDual min={0} max={100} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
+              <GelSlider isDual min={0} max={500} value={tempFilters.txCount} onChange={(v) => setTempFilters(p => ({...p, txCount: v as [number, number]}))} />
             </div>
         </FilterSection>
         
         {/* 3. CHAIN MOBILITY */}
-        <FilterSection title="Chain · IBC" icon={Share2} description="체인별 거래량 분포 및 IBC 활동을 기준으로 노드를 필터링합니다. ATOM Volume Share와 ATOMONE Volume Share는 각 체인에서의 거래량 비율을 나타내며, IBC Ratio는 IBC(Inter-Blockchain Communication) 거래의 비율을 나타냅니다.">
+        <FilterSection
+          title="Chain · Mobility"
+          icon={Share2}
+          description="체인별 거래량 분포와 IBC 비중으로 계정의 활동 타입을 필터링합니다."
+          summary={summaryChain}
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">ATOM Volume Share</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.atomShare[0].toFixed(2)} ~ {tempFilters.atomShare[1].toFixed(2)}</span></div>
               <GelSlider isDual min={0} max={1} value={tempFilters.atomShare} onChange={(v) => setTempFilters(p => ({...p, atomShare: v as [number, number]}))} />
@@ -362,7 +530,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </FilterSection>
 
         {/* 4. ACTIVITY */}
-        <FilterSection title="Activity" icon={Activity} description="활동 빈도 및 최근 거래 행동을 기준으로 노드를 필터링합니다. Active Days는 기간 내 거래가 발생한 일수를 나타내며, Recent Activity는 최근 3일, 7일, 30일 또는 전체 기간 중 거래 활동이 있었는지 필터링합니다.">
+        <FilterSection
+          title="Activity"
+          icon={Activity}
+          description="활동 일수와 최근 거래 여부로 현재도 움직이는 계정을 추립니다."
+          summary={summaryActivity}
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
            <div className="space-y-2">
              <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Active Days</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.activeDays[0]} ~ {tempFilters.activeDays[1]}</span></div>
              <GelSlider isDual min={0} max={60} value={tempFilters.activeDays} onChange={(v) => setTempFilters(p => ({...p, activeDays: v as [number, number]}))} />
@@ -389,7 +567,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </FilterSection>
 
         {/* 5. IMPACT */}
-        <FilterSection title="Impact" icon={Target} description="영향력 점수, 타이밍 프로필, 시장 상관관계를 기준으로 노드를 필터링합니다. AII Score는 노드의 영향력 점수를 나타내며, Timing Profile은 LEADING(선행), SYNC(동기), LAGGING(후행) 거래 패턴을 구분합니다. Correlation은 시장과의 상관관계를 -1부터 +1까지의 범위로 나타냅니다.">
+        <FilterSection
+          title="Impact"
+          icon={Target}
+          description="영향력 점수, 타이밍, 상관도를 기반으로 전략 후보를 압축합니다."
+          summary={summaryImpact}
+          onHelp={(info) =>
+            setHelpBubble((prev) =>
+              prev && prev.title === info.title ? null : info
+            )
+          }
+        >
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1"><span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">AII Score</span><span className="text-[11px] font-bold text-gray-700">{tempFilters.aiiScore[0]} ~ {tempFilters.aiiScore[1]}</span></div>
               <GelSlider isDual min={0} max={100} value={tempFilters.aiiScore} onChange={(v) => setTempFilters(p => ({...p, aiiScore: v as [number, number]}))} />
@@ -421,6 +609,40 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       </div>
 
+      {helpBubble && helpPosition &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setHelpBubble(null)}
+              style={{ cursor: 'pointer' }}
+            ></div>
+            <div
+              className="fixed z-50 rounded-2xl p-4 text-[11px] text-gray-700 shadow-2xl border border-white/40 bg-white/95"
+              style={{
+                top: helpPosition.top,
+                left: helpPosition.left,
+                width: helpPosition.width,
+              }}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  {helpBubble.title} Info
+                </span>
+                <button
+                  onClick={() => setHelpBubble(null)}
+                  className="p-1 rounded-full hover:bg-white/40 transition-colors"
+                  aria-label="Close description"
+                >
+                  <X size={12} className="text-gray-500" />
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-700 leading-relaxed">{helpBubble.description}</p>
+            </div>
+          </>,
+          document.body
+        )}
+
       {/* Apply Button */}
       <div className="px-6 py-5 border-t border-white/20 relative" style={{
         background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
@@ -428,14 +650,27 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         WebkitBackdropFilter: 'blur(12px)',
         boxShadow: 'none'
       }}>
-        <button onClick={applyFilters} className="w-full py-4 glass-button rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden text-gray-800" style={{
-          background: 'transparent',
-          backdropFilter: 'blur(24px) saturate(160%) brightness(1.02)',
-          WebkitBackdropFilter: 'blur(24px) saturate(160%) brightness(1.02)',
-          border: '2px solid #10b981',
-          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 24px -8px rgba(16, 185, 129, 0.3)'
-        }}>
-           Apply Filters
+        {hasPendingChanges && (
+          <div className="absolute top-2 right-6 flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            변경됨
+          </div>
+        )}
+        <button
+          onClick={applyFilters}
+          disabled={!hasPendingChanges}
+          className={`w-full py-4 glass-button rounded-2xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest relative overflow-hidden ${
+            hasPendingChanges ? 'text-gray-800' : 'text-gray-500 cursor-not-allowed opacity-60'
+          }`}
+          style={{
+            background: 'transparent',
+            backdropFilter: 'blur(24px) saturate(160%) brightness(1.02)',
+            WebkitBackdropFilter: 'blur(24px) saturate(160%) brightness(1.02)',
+            border: '2px solid #10b981',
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 24px -8px rgba(16, 185, 129, 0.3)',
+          }}
+        >
+          Apply Filters
         </button>
       </div>
     </div>

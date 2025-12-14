@@ -192,6 +192,7 @@ export default function App() {
       }}>
          <FilterPanel 
             tempFilters={tempFilters} 
+            appliedFilters={filters}
             setTempFilters={setTempFilters}
             applyFilters={applyFilters}
             resetFilters={resetFilters}

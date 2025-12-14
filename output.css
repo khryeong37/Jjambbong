@@ -1295,10 +1295,6 @@ input[type="date"].date-input-no-icon {
   bottom: 1rem;
 }
 
-.bottom-full {
-  bottom: 100%;
-}
-
 .left-0 {
   left: 0px;
 }
@@ -1315,12 +1311,12 @@ input[type="date"].date-input-no-icon {
   left: 1rem;
 }
 
-.right-2 {
-  right: 0.5rem;
-}
-
 .right-4 {
   right: 1rem;
+}
+
+.right-6 {
+  right: 1.5rem;
 }
 
 .top-0 {
@@ -1371,17 +1367,16 @@ input[type="date"].date-input-no-icon {
   z-index: 30;
 }
 
+.z-40 {
+  z-index: 40;
+}
+
 .z-50 {
   z-index: 50;
 }
 
 .col-span-12 {
   grid-column: span 12 / span 12;
-}
-
-.mx-4 {
-  margin-left: 1rem;
-  margin-right: 1rem;
 }
 
 .mx-auto {
@@ -1427,6 +1422,10 @@ input[type="date"].date-input-no-icon {
 
 .ml-auto {
   margin-left: auto;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
 }
 
 .mt-2 {
@@ -1625,10 +1624,6 @@ input[type="date"].date-input-no-icon {
   flex-shrink: 0;
 }
 
-.origin-bottom {
-  transform-origin: bottom;
-}
-
 .origin-left {
   transform-origin: left;
 }
@@ -1687,6 +1682,16 @@ input[type="date"].date-input-no-icon {
   animation: aurora 60s linear infinite;
 }
 
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1703,6 +1708,10 @@ input[type="date"].date-input-no-icon {
 
 .cursor-grabbing {
   cursor: grabbing;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
 }
 
 .cursor-pointer {
@@ -1743,6 +1752,10 @@ input[type="date"].date-input-no-icon {
 
 .flex-col {
   flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .items-start {
@@ -1991,6 +2004,10 @@ input[type="date"].date-input-no-icon {
   border-color: rgb(255 255 255 / 0.2);
 }
 
+.border-white\/40 {
+  border-color: rgb(255 255 255 / 0.4);
+}
+
 .bg-\[\#5A7FFF\]\/10 {
   background-color: rgb(90 127 255 / 0.1);
 }
@@ -2099,12 +2116,20 @@ input[type="date"].date-input-no-icon {
   background-color: rgb(255 255 255 / 0.5);
 }
 
+.bg-white\/70 {
+  background-color: rgb(255 255 255 / 0.7);
+}
+
 .bg-white\/80 {
   background-color: rgb(255 255 255 / 0.8);
 }
 
 .bg-white\/90 {
   background-color: rgb(255 255 255 / 0.9);
+}
+
+.bg-white\/95 {
+  background-color: rgb(255 255 255 / 0.95);
 }
 
 .bg-gradient-to-b {
@@ -2224,6 +2249,11 @@ input[type="date"].date-input-no-icon {
   padding-right: 1.5rem;
 }
 
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
 .py-0\.5 {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
@@ -2259,9 +2289,12 @@ input[type="date"].date-input-no-icon {
   padding-bottom: 1.25rem;
 }
 
-.px-8 {
-  padding-left: 2rem;
-  padding-right: 2rem;
+.pb-2 {
+  padding-bottom: 0.5rem;
+}
+
+.pb-3 {
+  padding-bottom: 0.75rem;
 }
 
 .pb-4 {
@@ -2272,8 +2305,8 @@ input[type="date"].date-input-no-icon {
   padding-left: 1rem;
 }
 
-.pr-6 {
-  padding-right: 1.5rem;
+.pt-0 {
+  padding-top: 0px;
 }
 
 .pt-2\.5 {
@@ -2552,6 +2585,12 @@ input[type="date"].date-input-no-icon {
   opacity: 0.6;
 }
 
+.shadow-2xl {
+  --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-inner {
   --tw-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: inset 0 2px 4px 0 var(--tw-shadow-color);
@@ -2654,10 +2693,6 @@ input[type="date"].date-input-no-icon {
   transition-property: transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
-}
-
-.delay-300 {
-  transition-delay: 300ms;
 }
 
 .duration-200 {
@@ -3101,10 +3136,6 @@ input[type="date"].date-input-no-icon {
   color-scheme: light;
 }
 
-.hover\:\!z-20:hover {
-  z-index: 20 !important;
-}
-
 .hover\:-translate-y-0\.5:hover {
   --tw-translate-y: -0.125rem;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -3157,6 +3188,10 @@ input[type="date"].date-input-no-icon {
 
 .hover\:bg-white\/20:hover {
   background-color: rgb(255 255 255 / 0.2);
+}
+
+.hover\:bg-white\/40:hover {
+  background-color: rgb(255 255 255 / 0.4);
 }
 
 .hover\:text-emerald-600:hover {
@@ -3362,11 +3397,6 @@ input[type="date"].date-input-no-icon {
 
   .dark\:bg-black\/50 {
     background-color: rgb(0 0 0 / 0.5);
-  }
-
-  .dark\:bg-gray-700 {
-    --tw-bg-opacity: 1;
-    background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
   }
 
   .dark\:bg-purple-500\/10 {
