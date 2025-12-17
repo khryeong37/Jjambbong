@@ -93,9 +93,9 @@ export default function App() {
   const [slots, setSlots] = useState<
     { id: string; node: NodeData | null; weight: number; color: string }[]
   >([
-    { id: 'A', node: null, weight: 50, color: '#f87171' }, // Soft Red
-    { id: 'B', node: null, weight: 30, color: '#60a5fa' }, // Soft Blue
-    { id: 'C', node: null, weight: 20, color: '#A78BFA' }, // Soft Purple
+    { id: 'A', node: null, weight: 50, color: '#3B82F6' }, // Slot A - Blue
+    { id: 'B', node: null, weight: 30, color: '#F472B6' }, // Slot B - Pink
+    { id: 'C', node: null, weight: 20, color: '#10B981' }, // Slot C - Green
   ]);
 
   // --- Fetch Data ---

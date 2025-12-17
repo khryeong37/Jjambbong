@@ -118,10 +118,24 @@ export interface SimulationConfig {
 export interface SimulationResult {
   timeline: {
     date: string;
+    portfolioCoins: number;
     portfolioValue: number;
-    benchmarkValue: number; // Price of ATOM/ONE itself
+    price: number;
+    benchmarkCoins: number;
+    benchmarkValue: number; // Buy-and-hold baseline
+    slots: Record<string, number>;
   }[];
+  finalCoins: number;
   finalValue: number;
   roi: number; // Percentage
-  totalPnL: number;
+  totalPnL: number; // Value-based PnL
+  coinPnL: number; // Coin-based PnL
+  slotSummaries: {
+    id: string;
+    initialValue: number;
+    finalValue: number;
+    contribution: number;
+    label?: string;
+    address?: string;
+  }[];
 }

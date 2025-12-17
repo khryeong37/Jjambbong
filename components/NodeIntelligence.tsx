@@ -11,6 +11,7 @@ import {
   Replace,
   Copy,
   Clock,
+  ChevronDown,
 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import {
@@ -163,6 +164,13 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
   const swapSectionRef = useRef<HTMLDivElement>(null);
   const impactSectionRef = useRef<HTMLDivElement>(null);
   const assignSectionRef = useRef<HTMLDivElement>(null);
+  const [openSections, setOpenSections] = useState({
+    swap: false,
+    impact: false,
+    timing: false,
+  });
+  const [isSwapTooltipActive, setIsSwapTooltipActive] = useState(false);
+  const geminiApiKey = (import.meta.env?.VITE_GEMINI_API_KEY || '').trim();
 
   useEffect(() => {
     return () => {
@@ -206,9 +214,9 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
 
     const generateSummary = async () => {
       setLoadingSummary(true);
-      if (import.meta.env?.VITE_GEMINI_API_KEY) {
+      if (geminiApiKey) {
         try {
-          const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+          const ai = new GoogleGenAI({ apiKey: geminiApiKey });
           const prompt = `Analyze crypto account "${selectedNode.name}".
           Impact Score ${Math.floor(selectedNode.size)}/100, Bias: ${selectedNode.bias}.
           Transaction breakdown: ${selectedNode.composition.swap}% Swap, ${selectedNode.composition.ibc}% IBC, ${selectedNode.composition.stake}% Stake.
@@ -221,10 +229,10 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             model: 'gemini-2.5-flash',
             contents: prompt,
           });
-          setSummary(response.text || 'Analysis unavailable.');
+          setSummary(response.text?.trim() || 'Gemini 응답이 비어 있습니다.');
         } catch (error) {
           console.error(error);
-          setSummary('AI Analysis unavailable (Check API Key).');
+          setSummary('Gemini 분석 실패 – 콘솔 로그를 확인하세요.');
         }
       } else {
         const impactLevel = selectedNode.size >= 70 ? 'high' : selectedNode.size >= 40 ? 'moderate' : 'emerging';
@@ -248,12 +256,14 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             2,
           )}, indicating ${selectedNode.bias} ecosystem strength.`,
         );
+        setLoadingSummary(false);
+        return;
       }
       setLoadingSummary(false);
     };
 
     generateSummary();
-  }, [selectedNode]);
+  }, [selectedNode, geminiApiKey]);
 
   const handleAssignToSlot = (slotId: string) => {
     if (!selectedNode) return;
@@ -295,44 +305,63 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     }
   };
 
-  const scrollToSection = (ref?: React.RefObject<HTMLDivElement>) => {
-    if (ref?.current) {
-      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
-    }
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const processedHistory = useMemo(() => {
     if (!selectedNode?.history?.length) {
-      return { data: [], flowCapLabel: '0', flowCapValue: 0 };
+      return {
+        data: [],
+        flowCapLabel: '0',
+        flowCapValue: 0,
+        priceStats: { min: null, max: null },
+      };
     }
     const raw = [...selectedNode.history].sort((a, b) => (a.date < b.date ? -1 : 1));
-    const priceBase =
-      raw
-        .map((entry) => entry.priceUnified ?? entry.price ?? null)
-        .find((value) => Number.isFinite(value as number)) ?? 0;
-    const safeBase = Number(priceBase) !== 0 ? Number(priceBase) : 1;
-    const netFlows = raw
-      .map((d) => Math.abs(d.netFlow || 0))
-      .filter((v) => Number.isFinite(v));
+    const priceValues = raw
+      .map((entry) => {
+        const price =
+          entry.priceUnified ?? entry.price ?? entry.priceAtom ?? entry.priceAtone ?? null;
+        return Number.isFinite(price as number) ? Number(price) : null;
+      })
+      .filter((value) => value !== null) as number[];
+
+    const priceMin = priceValues.length ? Math.min(...priceValues) : null;
+    const priceMax = priceValues.length ? Math.max(...priceValues) : null;
+    const pricePadding =
+      priceMin !== null && priceMax !== null ? Math.max(0.01, (priceMax - priceMin) * 0.05) : 1;
+
+    const netFlows = raw.map((d) => Math.abs(d.netFlow || 0)).filter((v) => Number.isFinite(v));
     const flowCap = netFlows.length
       ? Math.max(getPercentile(netFlows as number[], 95), netFlows[netFlows.length - 1] || 0)
       : 0;
     const safeCap = flowCap || 1;
 
     const data = raw.map((entry) => {
-      const referencePrice = entry.priceUnified ?? entry.price ?? null;
-      const priceIndex = Number.isFinite(referencePrice)
-        ? ((Number(referencePrice) || safeBase) / safeBase) * 100
-        : null;
+      const priceValue =
+        entry.priceUnified ??
+        entry.price ??
+        entry.priceAtom ??
+        entry.priceAtone ??
+        (priceMin ?? 0);
       const displayNetFlow = Math.max(-safeCap, Math.min(safeCap, entry.netFlow || 0));
       return {
         ...entry,
-        priceIndex,
+        priceValue: Number.isFinite(priceValue) ? Number(priceValue) : null,
         displayNetFlow,
       };
     });
 
-    return { data, flowCapLabel: formatCompactNumber(safeCap, 1), flowCapValue: safeCap };
+    return {
+      data,
+      flowCapLabel: formatCompactNumber(safeCap, 1),
+      flowCapValue: safeCap,
+      priceStats: {
+        min: priceMin !== null ? priceMin - pricePadding : 0,
+        max: priceMax !== null ? priceMax + pricePadding : 1,
+      },
+    };
   }, [selectedNode?.history]);
 
   if (!selectedNode) {
@@ -356,53 +385,24 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
   const flowCorrelationPct =
     selectedNode.flowCorrelationScore ??
     Math.round(Math.abs(selectedNode.correlationScore ?? 0) * 100);
-  const kpiCards: {
-    label: string;
-    value: string;
-    sub: string;
-    tooltip: string;
-    ref?: React.RefObject<HTMLDivElement>;
-  }[] = [
-    {
-      label: 'AII Score',
-      value: `${Math.round(selectedNode.size)}`,
-      sub: 'Unified Impact (0-100)',
-      tooltip: 'Scale/Share/Timing/Corr를 가중 합산한 종합 점수입니다.',
-      ref: impactSectionRef,
-    },
+  const kpiCards = [
     {
       label: 'ROI',
       value: `${selectedNode.roi !== undefined ? selectedNode.roi.toFixed(2) : 'N/A'}%`,
-      sub: '필터 기간 내 순수익률',
-      tooltip: '좌측 기간과 동일한 범위에서 계산된 순매수 수익률입니다.',
-      ref: assignSectionRef,
+      sub: '기간 ROI',
     },
     {
       label: 'Net Flow Ratio',
       value: `${selectedNode.netBuyRatio >= 0 ? '+' : ''}${selectedNode.netBuyRatio.toFixed(2)}`,
-      sub: 'Behavior 코인 토글 기준',
-      tooltip: '순매수 대비 순매도의 비율 ( -1 ~ +1 )',
-      ref: priceSectionRef,
+      sub: 'Behavior 기준',
     },
     {
       label: 'Cross Volume',
       value: `${formatCompactNumber(selectedNode.crossVolume ?? selectedNode.totalVolume, 2)}`,
-      sub: 'ATOM↔ATOMONE 거래량',
-      tooltip: '두 코인이 함께 등장한 교차 스왑의 누적 체결 규모입니다.',
-      ref: swapSectionRef,
+      sub: 'ATOM↔ATOMONE',
     },
   ];
 
-  const activityCards = [
-    {
-      label: 'Active Days',
-      value: `${selectedNode.activeDays ?? 0}일`,
-    },
-    {
-      label: 'Last Active',
-      value: formatDate(selectedNode.lastActiveDate),
-    },
-  ];
   const donutData = swapBuckets.filter((bucket) => bucket.share > 0.2 || bucket.count > 0);
   const donutDisplayData = donutData.length ? donutData : swapBuckets;
   const dominantCategory =
@@ -412,20 +412,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     ) || swapBuckets[0];
 
   const sampleRoutes = dominantCategory?.samples?.slice(0, 3) ?? [];
-
-  const shareBreakdown = [
-    { label: 'ATOM Volume Share', value: formatPercent(selectedNode.atomVolumeShare, 1), color: '#EF4444' },
-    { label: 'ATOMONE Volume Share', value: formatPercent(selectedNode.oneVolumeShare, 1), color: '#0EA5E9' },
-    {
-      label: 'Market Share',
-      value:
-        selectedNode.marketSharePct !== undefined && selectedNode.marketSharePct !== null
-          ? `${(selectedNode.marketSharePct * 100).toFixed(2)}%`
-          : 'N/A',
-      color: '#10B981',
-    },
-    { label: 'Avg Trade Size', value: `${formatCompactNumber(selectedNode.avgTradeSize, 2)} units`, color: '#F97316' },
-  ];
 
   const breakdownMetrics = [
     { label: 'Scale Score', value: Math.round(selectedNode.scaleScore), color: '#5A7FFF' },
@@ -467,7 +453,9 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     return (
       <div className="text-[10px] font-semibold bg-white/90 dark:bg-slate-900/80 border border-white/40 dark:border-white/10 rounded-lg p-2 shadow-lg space-y-1">
         <div className="text-gray-500 dark:text-gray-400">{entry.date}</div>
-        <div className="text-gray-900 dark:text-white">Price Index: {entry.priceIndex ? entry.priceIndex.toFixed(1) : 'N/A'}</div>
+        <div className="text-gray-900 dark:text-white">
+          Price: {entry.priceValue ? entry.priceValue.toFixed(3) : 'N/A'}
+        </div>
         <div className={flowColor}>
           Net Flow: {formatCompactNumber(entry.netFlow, 2)}
         </div>
@@ -480,7 +468,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     if (!active || !payload?.length) return null;
     const entry = payload[0].payload;
     return (
-      <div className="text-[10px] space-y-1 bg-white/90 dark:bg-slate-900/85 border border-white/40 dark:border-white/10 rounded-lg p-3 shadow-lg max-w-[220px]">
+      <div className="text-[10px] space-y-1 bg-white dark:bg-slate-900 border border-white/40 dark:border-white/10 rounded-lg p-3 shadow-lg max-w-[220px]">
         <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full"
@@ -522,122 +510,165 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Header */}
         <div
-          className="px-6 py-5 border-b border-white/20 dark:border-[#4ED6E6]/20 relative"
+          className="px-6 py-5 border-b border-white/20 dark:border-[#4ED6E6]/20 space-y-4"
           style={{
             background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
           }}
         >
-          <h2 className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-widest mb-2">Node Intelligence</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-black text-gray-900 dark:text-white truncate tracking-tight">{selectedNode.name}</h1>
-            <div className={`text-[9px] font-bold px-3 py-1 rounded-full border ${biasBadgeClass}`}>{selectedNode.bias}</div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-white/70 uppercase tracking-[0.3em]">Node Address</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm font-mono text-gray-800 dark:text-gray-200">
+                  {truncateAddress(selectedNode.address, selectedNode.id)}
+                </span>
+                <button
+                  onClick={handleCopyAddress}
+                  className="text-[10px] flex items-center gap-1 px-2 py-1 rounded-full border border-gray-200 dark:border-white/20 text-gray-500 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-white/10 transition"
+                >
+                  <Copy size={12} />
+                  {addressCopied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+            <div className={`text-[10px] font-bold px-3 py-1 rounded-full border ${biasBadgeClass}`}>{selectedNode.bias}</div>
           </div>
-          <div className="flex items-center gap-3 mt-3">
-            <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono">{truncateAddress(selectedNode.address, selectedNode.id)}</div>
-            <button
-              onClick={handleCopyAddress}
-              className="text-[10px] flex items-center gap-1 px-2 py-1 rounded-full border border-gray-200 dark:border-white/20 text-gray-500 dark:text-gray-200 hover:bg-white/60 dark:hover:bg-white/10 transition"
-            >
-              <Copy size={12} />
-              {addressCopied ? 'Copied' : 'Copy'}
-            </button>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-white/70 uppercase tracking-[0.25em]">AII Score</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black text-gray-900 dark:text-white">{Math.round(selectedNode.size)}</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">/100</span>
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-300 mt-1 truncate">{selectedNode.name}</p>
           </div>
-          <div className="grid grid-cols-4 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {kpiCards.map((card) => (
-              <button
+              <div
                 key={card.label}
-                type="button"
-                onClick={() => scrollToSection(card.ref)}
-                title={card.tooltip}
-                className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 px-3 py-2 text-left hover:border-[#5A7FFF]/50 hover:shadow-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A7FFF]"
+                className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-white/5 px-4 py-3"
               >
                 <div className="text-[9px] uppercase text-gray-400 dark:text-gray-500 font-bold">{card.label}</div>
-                <div className="text-base font-black text-gray-900 dark:text-white mt-1">{card.value}</div>
-                <div className="text-[9px] text-gray-400 dark:text-gray-500">{card.sub}</div>
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            {activityCards.map((item) => (
-              <div key={item.label} className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-300">
-                <Clock size={12} className="text-gray-400 dark:text-gray-500" />
-                <span className="font-semibold">{item.label}:</span>
-                <span className="font-bold text-gray-900 dark:text-white">{item.value}</span>
+                <div className="text-xl font-black text-gray-900 dark:text-white mt-1">{card.value}</div>
+                <div className="text-[10px] text-gray-400 dark:text-gray-500">{card.sub}</div>
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-2 text-[9px] text-gray-400 dark:text-gray-500 mt-3">
-            <Info size={12} />
-            모든 지표는 좌측 Time Range와 Behavior 토글을 그대로 따릅니다.
+          <div className="flex flex-wrap items-center gap-4 text-[10px] text-gray-500 dark:text-gray-300">
+            <div className="flex items-center gap-1">
+              <Clock size={12} className="text-gray-400 dark:text-gray-500" />
+              <span>Active {selectedNode.activeDays ?? 0}일</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock size={12} className="text-gray-400 dark:text-gray-500" />
+              <span>Last {formatDate(selectedNode.lastActiveDate)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Info size={12} />
+              <span>필터와 동일한 기간·코인 맥락</span>
           </div>
           {isFallbackDetail && (
-            <div className="mt-3 flex items-center gap-2 text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+            <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
               <Info size={12} />
-              필터 범위 데이터를 불러올 수 없어 기본 기간 데이터로 대체했습니다.
+              <span>기간 데이터 없음 → 기본 기간 표시</span>
             </div>
           )}
+          {isLoadingDetail && (
+            <div className="flex items-center gap-1 text-[10px] text-sky-600 dark:text-sky-400 font-semibold">
+              <Info size={12} />
+              필터 변경으로 데이터를 다시 계산 중입니다.
+            </div>
+          )}
+        </div>
         </div>
 
         {/* Content */}
         <div className="space-y-6 px-6 py-5">
-        {/* Section 1: Price vs Net Flow */}
-        <div className="space-y-3" ref={priceSectionRef}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Price vs Net Flow</p>
-              <p className="text-[9px] text-gray-400 dark:text-gray-500">기간 및 코인 맥락은 좌측 필터를 그대로 따릅니다.</p>
+          {/* Price vs Net Flow */}
+          <div className="space-y-3" ref={priceSectionRef}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Price vs Net Flow</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500">필터 기간을 그대로 반영한 일자별 흐름</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-white/5 p-1 rounded">
+                <TrendingUp size={12} className="text-gray-400 dark:text-gray-300" />
+              </div>
             </div>
-            <div className="bg-gray-50 dark:bg-white/5 p-1 rounded">
-              <TrendingUp size={12} className="text-gray-400 dark:text-gray-300" />
-            </div>
-          </div>
-          <div className="h-48 rounded-2xl p-4 relative overflow-hidden glass-input border border-gray-100 dark:border-white/10">
-            {!processedHistory.data.length ? (
-              <div className="h-full flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">시계열 데이터가 부족합니다.</div>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/40 dark:to-black/20 pointer-events-none" />
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="h-48 rounded-2xl p-4 relative overflow-hidden glass-input border border-gray-100 dark:border-white/10">
+              {!processedHistory.data.length ? (
+                <div className="h-full flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">시계열 데이터가 부족합니다.</div>
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/40 dark:to-black/20 pointer-events-none" />
+                  <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={processedHistory.data}>
                     <XAxis dataKey="date" hide />
-                    <YAxis yAxisId="left" hide domain={['dataMin', 'dataMax']} />
-                    <YAxis yAxisId="right" hide domain={[-processedHistory.flowCapValue, processedHistory.flowCapValue]} />
-                    <ReferenceLine yAxisId="right" y={0} stroke="rgba(148, 163, 184, 0.5)" strokeDasharray="4 4" />
+                    <YAxis
+                      yAxisId="price"
+                      hide
+                      domain={
+                        processedHistory.priceStats.min !== null &&
+                        processedHistory.priceStats.max !== null
+                          ? [processedHistory.priceStats.min, processedHistory.priceStats.max]
+                          : ['auto', 'auto']
+                      }
+                    />
+                    <YAxis
+                      yAxisId="flow"
+                      hide
+                      domain={[-processedHistory.flowCapValue, processedHistory.flowCapValue]}
+                    />
+                    <ReferenceLine yAxisId="flow" y={0} stroke="rgba(148, 163, 184, 0.5)" strokeDasharray="4 4" />
                     <Tooltip content={chartTooltip} />
-                    <Bar yAxisId="right" dataKey="displayNetFlow" barSize={8} radius={[3, 3, 0, 0]}>
+                    <Bar yAxisId="flow" dataKey="displayNetFlow" barSize={8} radius={[3, 3, 0, 0]}>
                       {processedHistory.data.map((entry, index) => (
                         <Cell key={`flow-${index}`} fill={entry.netFlow >= 0 ? '#EF4444' : '#0EA5E9'} fillOpacity={0.85} />
                       ))}
                     </Bar>
-                    <Line yAxisId="left" type="monotone" dataKey="priceIndex" stroke="#475569" strokeWidth={2} dot={false} />
+                    <Line
+                      yAxisId="price"
+                      type="monotone"
+                      dataKey="priceValue"
+                      stroke="#111827"
+                      strokeWidth={1.75}
+                      dot={false}
+                      opacity={0.9}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               </>
             )}
           </div>
-          <p className="text-[9px] text-gray-500 dark:text-gray-500 leading-relaxed">
-            Price 라인은 기간 시작점을 100으로 리베이스한 지수입니다. Net Flow 막대는 ±{processedHistory.flowCapLabel} 구간으로 표시되며, 툴팁에는 클리핑 전 실제 값이 그대로 표기됩니다.
-          </p>
-        </div>
-
-        {/* Section 2: Swap Profile */}
-        <div className="space-y-4" ref={swapSectionRef}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Swap Profile & Mobility</p>
-              <p className="text-[9px] text-gray-400 dark:text-gray-500">ATOM/ATOMONE 교차와 편향, 대표 경로를 요약합니다.</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-white/5 p-1 rounded">
-              <Activity size={12} className="text-gray-400 dark:text-gray-300" />
-            </div>
+            <p className="text-[9px] text-gray-500 dark:text-gray-500">
+              Price 라인은 필터 기간 전체의 시장 가격을, Net Flow 막대는 ±{processedHistory.flowCapLabel} 범위의 순유입을 의미합니다.
+            </p>
           </div>
-          <div className="flex flex-col xl:flex-row gap-4">
-            <div className="flex flex-col md:flex-row gap-4 flex-1">
-              <div className="flex flex-col lg:flex-row gap-4 bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-100 dark:border-[#4ED6E6]/20 flex-1">
-                <div className="w-full lg:w-1/2 flex items-center justify-center relative">
-                  <div className="w-32 h-32">
+
+          {/* Swap Profile */}
+          <div ref={swapSectionRef}>
+            <button
+              type="button"
+              onClick={() => toggleSection('swap')}
+              className="w-full flex items-center justify-between gap-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-3"
+            >
+              <div className="text-left">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Swap Profile & Mobility</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500">교차 스왑 비중과 대표 경로</p>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <Activity size={14} />
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${openSections.swap ? 'rotate-180' : ''}`}
+                />
+              </div>
+            </button>
+            {openSections.swap && (
+              <div className="mt-4 rounded-2xl border border-gray-100 dark:border-[#4ED6E6]/20 bg-gray-50 dark:bg-white/5 p-4 space-y-4">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="w-32 h-32 relative mx-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -665,145 +696,153 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
                       </span>
                     </div>
                   </div>
+                  <div className="flex-1 text-[11px] text-gray-600 dark:text-gray-300 space-y-2">
+                    {swapBuckets.map((bucket) => (
+                      <div key={bucket.key} className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bucket.color }}></span>
+                          {bucket.label}
+                        </span>
+                        <span>{bucket.share.toFixed(1)}% · {bucket.count} tx</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 space-y-2">
-                  <p className="text-[9px] uppercase text-gray-400 dark:text-gray-500 font-bold">대표 경로</p>
-                  {sampleRoutes.length ? (
-                    <ul className="space-y-1 text-[11px] text-gray-600 dark:text-gray-200">
+                {sampleRoutes.length ? (
+                  <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-1">
+                    <p className="font-semibold text-gray-800 dark:text-white">대표 경로</p>
+                    <ul className="space-y-1">
                       {sampleRoutes.map((route, idx) => (
-                        <li key={`${route}-${idx}`} className="flex items-start gap-2">
-                          <span className="mt-0.5 text-[8px] text-gray-400">●</span>
-                          <span>{route}</span>
-                        </li>
+                        <li key={`${route}-${idx}`}>• {route}</li>
                       ))}
                     </ul>
-                  ) : (
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">표본 경로를 수집할 만큼의 데이터가 부족합니다.</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                {shareBreakdown.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-3">
-                    <div className="text-[9px] uppercase text-gray-400 dark:text-gray-500 font-bold">{item.label}</div>
-                    <div className="text-sm font-black text-gray-900 dark:text-white mt-1">{item.value}</div>
-                    <div className="h-1.5 rounded-full mt-2 bg-gray-100 dark:bg-white/10">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: item.value.includes('%') ? item.value : '100%',
-                          backgroundColor: item.color,
-                        }}
-                      ></div>
-                    </div>
                   </div>
-                ))}
+                ) : (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">샘플 경로를 수집할 만큼 데이터가 충분하지 않습니다.</p>
+                )}
               </div>
-            </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {swapBuckets.map((bucket) => (
-              <div key={bucket.key} className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-3 space-y-1">
-                <div className="flex items-center justify-between text-[10px] font-semibold text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bucket.color }}></span>
-                    {bucket.label}
-                  </div>
-                  <span>{bucket.share.toFixed(1)}%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/10">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.min(100, bucket.share)}%`,
-                      backgroundColor: bucket.color,
-                    }}
-                  ></div>
-                </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400">건수: {bucket.count} tx</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Section 3: Impact Mechanics */}
-        <div className="space-y-4" ref={impactSectionRef}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Impact Mechanics</p>
-              <p className="text-[9px] text-gray-400 dark:text-gray-500">AII 점수를 구성하는 요인과 Timing/Correlation을 분해합니다.</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-white/5 p-1 rounded">
-              <BarChart2 size={12} className="text-gray-400 dark:text-gray-300" />
-            </div>
+          {/* Impact Mechanics */}
+          <div ref={impactSectionRef}>
+            <button
+              type="button"
+              onClick={() => toggleSection('impact')}
+              className="w-full flex items-center justify-between gap-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-3"
+            >
+              <div className="text-left">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Impact Mechanics</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500">Scale · Share · Timing · Corr</p>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <BarChart2 size={14} />
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${openSections.impact ? 'rotate-180' : ''}`}
+                />
+              </div>
+            </button>
+            {openSections.impact && (
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {breakdownMetrics.map((metric) => (
+                    <div key={metric.label} className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-3">
+                      <div className="text-[9px] text-gray-500 uppercase font-bold mb-1">{metric.label}</div>
+                      <div className="text-xl font-black text-gray-900 dark:text-white">{metric.value}</div>
+                      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/10 mt-2">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, metric.value))}%`,
+                            backgroundColor: metric.color,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                  Scale은 교차 거래 규모, Share는 시장 지분, Timing은 best lag 기반, Flow Corr은 순유입과 가격의 결합 강도를 의미합니다.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {breakdownMetrics.map((metric) => (
-              <div key={metric.label} className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-3">
-                <div className="text-[9px] text-gray-500 uppercase font-bold mb-1">{metric.label}</div>
-                <div className="text-xl font-black text-gray-900 dark:text-white">{metric.value}</div>
-                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/10 mt-2">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, metric.value))}%`,
-                      backgroundColor: metric.color,
-                    }}
-                  ></div>
+
+          {/* Timing Detail */}
+          <div>
+            <button
+              type="button"
+              onClick={() => toggleSection('timing')}
+              className="w-full flex items-center justify-between gap-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-3"
+            >
+              <div className="text-left">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Timing / Correlation Detail</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500">선행·동행·후행 근거와 상관</p>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <TrendingUp size={14} />
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${openSections.timing ? 'rotate-180' : ''}`}
+                />
+              </div>
+            </button>
+            {openSections.timing && (
+              <div className="mt-4 space-y-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-[9px] uppercase text-gray-400 dark:text-gray-500 font-bold">Unified Timing</p>
+                    <div className="text-lg font-black text-gray-900 dark:text-white">{selectedNode.timing}</div>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">{timingNarrative}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-semibold">best lag</p>
+                    <p className="text-xl font-black text-gray-900 dark:text-white">{formatLagLabel(unifiedLag)}</p>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500">음수=선행 · 양수=후행</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-[10px]">
+                  {[
+                    {
+                      label: 'ATOM',
+                      lag: timingDetail?.bestLagAtom,
+                      weight: atomWeight,
+                      corr: timingDetail?.correlationAtom,
+                      samples: timingDetail?.sampleSizeAtom,
+                    },
+                    {
+                      label: 'ATOMONE',
+                      lag: timingDetail?.bestLagAtone,
+                      weight: atoneWeight,
+                      corr: timingDetail?.correlationAtone,
+                      samples: timingDetail?.sampleSizeAtone,
+                    },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-3 space-y-1">
+                      <div className="flex items-center justify-between font-semibold text-gray-500 dark:text-gray-300">
+                        <span>{item.label}</span>
+                        <span>{item.weight}%</span>
+                      </div>
+                      <div className="text-sm font-black text-gray-900 dark:text-white">{formatLagLabel(item.lag)}</div>
+                      <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                        Corr:{' '}
+                        {item.corr !== null && item.corr !== undefined && Number.isFinite(item.corr)
+                          ? `${item.corr > 0 ? '+' : ''}${item.corr.toFixed(2)}`
+                          : 'N/A'}{' '}
+                        · 샘플 {item.samples ?? 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                  Flow Correlation Strength: <span className="font-semibold text-gray-700 dark:text-gray-200">{correlationLabel}</span>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-          <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div>
-                <p className="text-[9px] uppercase text-gray-400 dark:text-gray-500 font-bold">Timing Detail (Unified)</p>
-                <div className="text-lg font-black text-gray-900 dark:text-white">{selectedNode.timing}</div>
-                <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">{timingNarrative}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-semibold">best lag</p>
-                <p className="text-xl font-black text-gray-900 dark:text-white">{formatLagLabel(unifiedLag)}</p>
-                <p className="text-[9px] text-gray-400 dark:text-gray-500">음수=선행 · 양수=후행</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-[10px]">
-              {[
-                {
-                  label: 'ATOM',
-                  lag: timingDetail?.bestLagAtom,
-                  weight: atomWeight,
-                  corr: timingDetail?.correlationAtom,
-                  samples: timingDetail?.sampleSizeAtom,
-                },
-                {
-                  label: 'ATOMONE',
-                  lag: timingDetail?.bestLagAtone,
-                  weight: atoneWeight,
-                  corr: timingDetail?.correlationAtone,
-                  samples: timingDetail?.sampleSizeAtone,
-                },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-3 space-y-1">
-                  <div className="flex items-center justify-between font-semibold text-gray-500 dark:text-gray-300">
-                    <span>{item.label}</span>
-                    <span>{item.weight}%</span>
-                  </div>
-                  <div className="text-sm font-black text-gray-900 dark:text-white">{formatLagLabel(item.lag)}</div>
-                  <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                    Corr:{' '}
-                    {item.corr !== null && item.corr !== undefined && Number.isFinite(item.corr)
-                      ? `${item.corr > 0 ? '+' : ''}${item.corr.toFixed(2)}`
-                      : 'N/A'}{' '}
-                    · 샘플 {item.samples ?? 0}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              Flow Correlation Strength: <span className="font-semibold text-gray-700 dark:text-gray-200">{correlationLabel}</span>
-            </div>
-          </div>
+
+          {/* Narrative */}
           <div className="rounded-2xl border border-emerald-100 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-500/10 dark:to-slate-900/40 p-[2px]">
             <div className="bg-white/90 dark:bg-slate-950/80 rounded-[18px] p-4 flex gap-3">
               <div className="bg-emerald-100 dark:bg-emerald-500/20 p-2 rounded-xl">
@@ -817,14 +856,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
               </div>
             </div>
           </div>
-          {isLoadingDetail && (
-            <div className="text-[10px] font-semibold text-amber-500 flex items-center gap-1">
-              <Info size={12} />
-              필터 변경으로 데이터를 다시 계산 중입니다.
-            </div>
-          )}
         </div>
-      </div>
       </div>
 
       {/* Assign to Simulation */}
