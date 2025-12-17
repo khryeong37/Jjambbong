@@ -170,7 +170,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     timing: false,
   });
   const [isSwapTooltipActive, setIsSwapTooltipActive] = useState(false);
-  const geminiApiKey = (import.meta.env?.VITE_GEMINI_API_KEY || '').trim();
+  const geminiApiKey = ''; // Gemini API not exposed on client bundle to avoid key leakage.
 
   useEffect(() => {
     return () => {
@@ -214,56 +214,32 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
 
     const generateSummary = async () => {
       setLoadingSummary(true);
-      if (geminiApiKey) {
-        try {
-          const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-          const prompt = `Analyze crypto account "${selectedNode.name}".
-          Impact Score ${Math.floor(selectedNode.size)}/100, Bias: ${selectedNode.bias}.
-          Transaction breakdown: ${selectedNode.composition.swap}% Swap, ${selectedNode.composition.ibc}% IBC, ${selectedNode.composition.stake}% Stake.
-          Net Flow Ratio ${selectedNode.netBuyRatio?.toFixed(2)}, ROI ${selectedNode.roi ?? 0}%.
-          Provide a concise two-sentence insight highlighting timing (${selectedNode.timing}) and correlation (${selectedNode.correlationScore?.toFixed(
-            2,
-          )}).`;
+      const impactLevel = selectedNode.size >= 70 ? 'high' : selectedNode.size >= 40 ? 'moderate' : 'emerging';
+      const strategyType =
+        selectedNode.composition.swap > 50
+          ? 'active trading'
+          : selectedNode.composition.stake > 40
+          ? 'staking-focused'
+          : 'balanced';
+      const timingDesc =
+        selectedNode.timing === 'LEADING'
+          ? 'tends to lead price moves'
+          : selectedNode.timing === 'LAGGING'
+          ? 'usually reacts after trends form'
+          : 'moves with the market';
 
-          const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-          });
-          setSummary(response.text?.trim() || 'Gemini 응답이 비어 있습니다.');
-        } catch (error) {
-          console.error(error);
-          setSummary('Gemini 분석 실패 – 콘솔 로그를 확인하세요.');
-        }
-      } else {
-        const impactLevel = selectedNode.size >= 70 ? 'high' : selectedNode.size >= 40 ? 'moderate' : 'emerging';
-        const strategyType =
-          selectedNode.composition.swap > 50
-            ? 'active trading'
-            : selectedNode.composition.stake > 40
-            ? 'staking-focused'
-            : 'balanced';
-        const timingDesc =
-          selectedNode.timing === 'LEADING'
-            ? 'tends to lead price moves'
-            : selectedNode.timing === 'LAGGING'
-            ? 'usually reacts after trends form'
-            : 'moves with the market';
-
-        setSummary(
-          `This ${impactLevel}-impact account (AII ${Math.floor(
-            selectedNode.size,
-          )}) pursues ${strategyType} with ${selectedNode.netBuyRatio > 0 ? 'accumulation' : 'distribution'} bias. It ${timingDesc} and shows correlation ${selectedNode.correlationScore?.toFixed(
-            2,
-          )}, indicating ${selectedNode.bias} ecosystem strength.`,
-        );
-        setLoadingSummary(false);
-        return;
-      }
+      setSummary(
+        `This ${impactLevel}-impact account (AII ${Math.floor(
+          selectedNode.size,
+        )}) pursues ${strategyType} with ${selectedNode.netBuyRatio > 0 ? 'accumulation' : 'distribution'} bias. It ${timingDesc} and shows correlation ${selectedNode.correlationScore?.toFixed(
+          2,
+        )}, indicating ${selectedNode.bias} ecosystem strength.`,
+      );
       setLoadingSummary(false);
     };
 
     generateSummary();
-  }, [selectedNode, geminiApiKey]);
+  }, [selectedNode]);
 
   const handleAssignToSlot = (slotId: string) => {
     if (!selectedNode) return;

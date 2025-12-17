@@ -1380,10 +1380,6 @@ input[type="date"].date-input-no-icon {
   display: grid;
 }
 
-.contents {
-  display: contents;
-}
-
 .hidden {
   display: none;
 }
