@@ -56,8 +56,16 @@ export const loadSwapNodes = async (dateRange?: {
   return data as NodeData[];
 };
 
-export const loadNodeDetail = async (id: string): Promise<NodeData> => {
-  const endpoint = `/api/nodes/${encodeURIComponent(id)}`;
+export const loadNodeDetail = async (
+  id: string,
+  dateRange?: { start?: string; end?: string }
+): Promise<NodeData> => {
+  const searchParams = new URLSearchParams();
+  if (dateRange?.start) searchParams.set('start', dateRange.start);
+  if (dateRange?.end) searchParams.set('end', dateRange.end);
+  const endpoint = `/api/nodes/${encodeURIComponent(id)}${
+    searchParams.toString() ? `?${searchParams.toString()}` : ''
+  }`;
   const url = API_BASE_URL
     ? `${API_BASE_URL.replace(/\/$/, '')}${endpoint}`
     : endpoint;

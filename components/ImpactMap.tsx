@@ -3,7 +3,6 @@ import { NodeData, FilterState } from '../types';
 import {
   Loader2,
   ShieldAlert,
-  Zap,
   Plus,
   Minus,
   Maximize2,
@@ -18,6 +17,15 @@ interface ImpactMapProps {
   loading: boolean;
   apiStatus: 'loading' | 'live' | 'mock';
 }
+
+const formatCompactNumber = (value: number): string => {
+  if (!Number.isFinite(value)) return '0';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toFixed(0);
+};
 
 const isNodeActive = (node: NodeData, filters: FilterState): boolean => {
   // Total Volume: 범위 체크
@@ -88,7 +96,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 }) => {
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 });
   const [isPanning, setIsPanning] = useState(false);
-  const [showBiasLegend, setShowBiasLegend] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
@@ -99,6 +106,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   // 마우스 위치 & 맵 크기 (노드 근접 스케일링용)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
+  const [positionedNodes, setPositionedNodes] = useState<any[]>([]);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Canvas 크기 동기화
   useEffect(() => {
@@ -198,15 +207,16 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 
     const enrichedNodes = nodes.map((node) => {
       const roi = node.roi ?? 0; // ROI는 퍼센트 단위
+      const crossVolume = Math.max(0, node.totalVolume ?? 0);
       return {
         ...node,
         _isActive: isNodeActive(node, filters),
-        _AII: node.size, // AII Score (0~100)
+        _AII: node.size, // AII Score (0~100) – 우측 패널 등에서 사용
         _netFlow: node.netBuyRatio, // Net Flow Ratio (-1 ~ +1)
         _roi: roi, // ROI (투자 수익률, %)
         _atomShare: node.atomVolumeShare,
         _oneShare: node.oneVolumeShare,
-        _volume: node.totalVolume,
+        _volume: crossVolume,
         _tx: node.txCount,
         bias: node.bias, // Chain Bias (ATOM, ATOMONE, MIXED)
       };
@@ -216,7 +226,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     
     // X축: Net Flow Ratio (-1.0 ~ +1.0) - 순매수 성향
     // Y축: ROI (투자 수익률, %) - 모의투자 기반
-    // 버블 크기: AII Score (0~100)
+    // 버블 크기: ATOM↔ATOMONE 교차 거래량 (로그 스케일)
     // 버블 색상: Chain Bias (ATOM bias: 빨강, ATOMONE bias: 파랑, MIXED bias: 보라)
     
     // Net Flow Ratio: -1.0 ~ +1.0 범위
@@ -243,22 +253,19 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     const netFlowRange = netFlowP95 - netFlowP5 || 2; // 기본값 2 (-1 ~ +1)
     const roiRange = roiP95 - roiP5 || 300; // 기본값 300 (-100 ~ +200)
 
-    const { minActiveAII, maxActiveAII } = activeNodes.reduce(
-      (acc, n) => ({
-        minActiveAII: Math.min(acc.minActiveAII, n._AII),
-        maxActiveAII: Math.max(acc.maxActiveAII, n._AII),
-      }),
-      { minActiveAII: Infinity, maxActiveAII: -Infinity }
-    );
+    const volumeValues = activeNodes
+      .map((n) => n._volume)
+      .filter((v) => Number.isFinite(v) && v > 0)
+      .sort((a, b) => a - b);
+    const maxObservedVolume = volumeValues.length ? volumeValues[volumeValues.length - 1] : 0;
+    const volumeCap = volumeValues.length ? getPercentile(volumeValues, 99.5) : 0;
+    const safeVolumeCap = Math.max(volumeCap, maxObservedVolume, 1);
 
-    const finalMinAII = isFinite(minActiveAII) ? minActiveAII : 0;
-    const finalMaxAII = isFinite(maxActiveAII) ? maxActiveAII : 100;
-
-    // 노드 크기: 차이를 줄이되 여전히 구분 가능하도록
-    // 최소 10px, 최대 32px로 범위 축소 + 부드러운 스케일링
-    const MIN_NODE_SIZE = 10;
-    const MAX_NODE_SIZE = 32;
+    // 노드 크기: 교차 거래량을 로그 스케일로 표현 (5%~100% 비율 뒤 다시 px로 변환)
+    const MIN_NODE_SIZE = 12;
+    const MAX_NODE_SIZE = 46;
     const INACTIVE_NODE_SIZE = 3; // Ghost Node는 더 작게
+    const LOG_DENOM = Math.log1p(safeVolumeCap);
 
     // Generate deterministic jitter seed per node
     const getJitter = (seed: number) => {
@@ -273,8 +280,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       const clippedNetFlow = Math.max(netFlowP5, Math.min(netFlowP95, netFlow));
       const normalizedNetFlow = netFlowRange > 0 ? (clippedNetFlow - netFlowP5) / netFlowRange : 0.5;
       const baseXPercent = 5 + normalizedNetFlow * 90; // 5% ~ 95%
-      const jitterX = getJitter(node.id.charCodeAt(0) + idx) * 0.5; // jitter 약간 줄임
-      const xPercent = baseXPercent + jitterX;
+      const jitterX = getJitter(node.id.charCodeAt(0) + idx) * 1.45;
+      let xPercent = baseXPercent + jitterX;
 
       // Y축: ROI (투자 수익률, %) - 모의투자 기반
       // 아래쪽: 손실 계정 (ROI < 0), 위쪽: 수익 계정 (ROI > 0)
@@ -282,23 +289,37 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       const clippedRoi = Math.max(roiP5, Math.min(roiP95, roi));
       const normalizedRoi = roiRange > 0 ? (clippedRoi - roiP5) / roiRange : 0.5;
       const baseYPercent = 5 + normalizedRoi * 90; // 5% ~ 95%
-      const jitterY = getJitter(node.id.charCodeAt(0) + idx + 1000) * 0.5; // jitter 약간 줄임
-      const yPercent = baseYPercent + jitterY;
+      const jitterY = getJitter(node.id.charCodeAt(0) + idx + 1000) * 1.0;
+      let yPercent = baseYPercent + jitterY;
 
-      // 버블 크기: AII Score 기반 (0~100 → 10px~32px)
-      // 부드러운 크기 차이를 위해 cube root 스케일 사용 (√보다 더 부드러움)
-      const range = finalMaxAII - finalMinAII;
-      const t = range > 0 ? (node._AII - finalMinAII) / range : 0.5;
-      // Cube root 스케일: t^(1/3) - 제곱근보다 더 부드러운 커브
-      // 최소값 보정으로 작은 값도 적절히 보이도록
-      const smoothT = Math.pow(Math.max(0, Math.min(1, t)), 1/3);
-      // 추가로 최소 30%는 보장하여 작은 노드도 충분히 보이도록
-      const adjustedT = 0.3 + smoothT * 0.7; // 0.3 ~ 1.0 범위
+      // 극단 레일(x=±1) 근처 노드는 좁은 밴드 안에서만 좌우 이동 + Y축으로 살짝 분산
+      const EDGE_THRESHOLD = 0.12;
+      const EDGE_BAND_WIDTH = 3.5; // 퍼센트포인트
+      const EDGE_VERTICAL_SPREAD = 12;
+      let edgeRail: 'LEFT' | 'RIGHT' | null = null;
+      const railNoise = getJitter(node.id.charCodeAt(node.id.length - 1) + idx * 3 + 5000);
+      const railT = railNoise + 0.5; // 0~1
+
+      if (normalizedNetFlow <= EDGE_THRESHOLD) {
+        edgeRail = 'LEFT';
+        xPercent = 5 + railT * EDGE_BAND_WIDTH;
+        yPercent = Math.min(95, Math.max(5, yPercent + (railT - 0.5) * EDGE_VERTICAL_SPREAD));
+      } else if (normalizedNetFlow >= 1 - EDGE_THRESHOLD) {
+        edgeRail = 'RIGHT';
+        xPercent = 95 - EDGE_BAND_WIDTH + railT * EDGE_BAND_WIDTH;
+        yPercent = Math.min(95, Math.max(5, yPercent + (railT - 0.5) * EDGE_VERTICAL_SPREAD));
+      }
+
+      // 버블 크기: ATOM↔ATOMONE 교차 거래량 기반 로그 스케일
+      const volume = Math.max(0, node._volume || 0);
+      const cappedVolume = Math.min(volume, safeVolumeCap);
+      const normalizedVolume = LOG_DENOM > 0 ? Math.log1p(cappedVolume) / LOG_DENOM : 0;
+      const adjustedT = 0.05 + normalizedVolume * 0.95; // 5%~100% 비율
       const size = node._isActive
         ? MIN_NODE_SIZE + adjustedT * (MAX_NODE_SIZE - MIN_NODE_SIZE)
         : INACTIVE_NODE_SIZE;
 
-      return { ...node, xPercent, yPercent, size };
+      return { ...node, xPercent, yPercent, size, edgeRail };
     });
 
     // Active 노드를 우선적으로 표시하고, 그 다음 inactive 노드 표시
@@ -326,27 +347,112 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       filteredCount: activeNodes.length,
       roiRange: { min: roiP5, max: roiP95, range: roiRange },
       netFlowRange: { min: netFlowP5, max: netFlowP95, range: netFlowRange },
+      volumeStats: {
+        cap: safeVolumeCap,
+        max: maxObservedVolume,
+      },
     };
   }, [nodes, filters]);
 
   // Viewport 기반 가상화: 화면에 보이는 노드만 렌더링
   // LOD (Level of Detail): 줌 레벨에 따라 작은 노드 필터링
+  const displayNodes = positionedNodes.length ? positionedNodes : processedNodes.renderableNodes;
+
   const visibleNodes = useMemo(() => {
-    const { renderableNodes } = processedNodes;
-    if (!renderableNodes.length) return [];
+    if (!displayNodes.length) return [];
     
     // 줌 레벨에 따른 최소 노드 크기 (렌더링 최적화)
     // 줌 아웃 시 작은 노드는 숨김으로 성능 향상
     const minVisibleSize = view.zoom < 0.5 ? 8 : view.zoom < 1 ? 6 : 4;
     
-    return renderableNodes.filter((node: any) => {
+    return displayNodes.filter((node: any) => {
       // Active 노드는 항상 표시
       if (node._isActive) return true;
       
       // Inactive 노드는 줌 레벨에 따라 필터링
       return node.size >= minVisibleSize;
     });
-  }, [processedNodes, view.zoom]);
+  }, [displayNodes, view.zoom]);
+
+  // Collision-aware 레이아웃 (타겟 좌표에서 일정 범위 내로만 밀어냄)
+  useEffect(() => {
+    if (!mapSize || !processedNodes.renderableNodes.length) {
+      setPositionedNodes(processedNodes.renderableNodes);
+      return;
+    }
+
+    const nodes = processedNodes.renderableNodes.map((node: any) => {
+      const targetX = (node.xPercent / 100) * mapSize.width;
+      const targetY = mapSize.height - (node.yPercent / 100) * mapSize.height;
+      return {
+        ...node,
+        targetX,
+        targetY,
+        displayX: targetX,
+        displayY: targetY,
+      };
+    });
+
+    const iterations = 14;
+    const padding = 8;
+    const maxDx = 28;
+    const maxDy = 38;
+
+    for (let iter = 0; iter < iterations; iter++) {
+      let movedInThisIteration = false;
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const nodeA = nodes[i];
+          const nodeB = nodes[j];
+          const dx = nodeB.displayX - nodeA.displayX;
+          const dy = nodeB.displayY - nodeA.displayY;
+          const distance = Math.hypot(dx, dy) || 0.0001;
+          const minDistance = nodeA.size + nodeB.size + padding;
+
+          if (distance < minDistance) {
+            movedInThisIteration = true;
+            const overlap = (minDistance - distance) * 0.65;
+            const directionX = dx === 0 ? (Math.random() - 0.5) : dx / distance;
+            const directionY = dy === 0 ? (Math.random() - 0.5) : dy / distance;
+
+            // 활성 노드를 좀 더 고정시키기 위한 가중치 (inactive는 더 많이 밀림)
+            const activeWeightA = nodeA._isActive ? 0.3 : 0.9;
+            const activeWeightB = nodeB._isActive ? 0.3 : 0.9;
+
+            nodeA.displayX -= directionX * overlap * activeWeightA;
+            nodeA.displayY -= directionY * overlap * activeWeightA;
+            nodeB.displayX += directionX * overlap * activeWeightB;
+            nodeB.displayY += directionY * overlap * activeWeightB;
+          }
+        }
+      }
+
+      nodes.forEach((node) => {
+        const nodeDxLimit = node.edgeRail ? 20 : maxDx;
+        const nodeDyLimit = node.edgeRail ? 42 : maxDy;
+        const clampedDx = Math.max(-nodeDxLimit, Math.min(nodeDxLimit, node.displayX - node.targetX));
+        const clampedDy = Math.max(-nodeDyLimit, Math.min(nodeDyLimit, node.displayY - node.targetY));
+        node.displayX = node.targetX + clampedDx;
+        node.displayY = node.targetY + clampedDy;
+        node.displayX = Math.max(node.size, Math.min(mapSize.width - node.size, node.displayX));
+        node.displayY = Math.max(node.size, Math.min(mapSize.height - node.size, node.displayY));
+      });
+
+      if (!movedInThisIteration) break;
+    }
+
+    nodes.forEach((node) => {
+      node.displacement = Math.hypot(node.displayX - node.targetX, node.displayY - node.targetY);
+    });
+
+    setPositionedNodes(nodes);
+  }, [mapSize, processedNodes.renderableNodes]);
+
+  const volumeCapLabel = useMemo(
+    () => formatCompactNumber(processedNodes.volumeStats?.cap ?? 0),
+    [processedNodes.volumeStats]
+  );
 
   const getNodeAtPosition = useCallback((clientX: number, clientY: number) => {
     if (!mapRef.current || !mapSize) return null;
@@ -356,8 +462,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
 
     for (let i = visibleNodes.length - 1; i >= 0; i--) {
       const node = visibleNodes[i] as any;
-      const baseX = (node.xPercent / 100) * mapSize.width;
-      const baseY = mapSize.height - (node.yPercent / 100) * mapSize.height;
+      const baseX = node.displayX ?? (node.xPercent / 100) * mapSize.width;
+      const baseY = node.displayY ?? mapSize.height - (node.yPercent / 100) * mapSize.height;
       const screenX = view.x + baseX * view.zoom;
       const screenY = view.y + baseY * view.zoom;
       const radius = node.size;
@@ -376,7 +482,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         if (mapRef.current) {
           const rect = mapRef.current.getBoundingClientRect();
           setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-          setMapSize({ width: rect.width, height: rect.height });
         }
         rafRef.current = null;
       });
@@ -437,8 +542,8 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     ctx.scale(view.zoom, view.zoom);
 
     visibleNodes.forEach((node: any) => {
-      const baseX = (node.xPercent / 100) * mapSize.width;
-      const baseY = mapSize.height - (node.yPercent / 100) * mapSize.height;
+      const baseX = node.displayX ?? (node.xPercent / 100) * mapSize.width;
+      const baseY = node.displayY ?? mapSize.height - (node.yPercent / 100) * mapSize.height;
       const radius = node.size / view.zoom;
 
       const isSelected = selectedNode?.id === node.id;
@@ -467,6 +572,25 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         ctx.stroke();
       }
 
+      if (isSelected && node.displacement && node.displacement > 1) {
+        const targetX = node.targetX ?? baseX;
+        const targetY = node.targetY ?? baseY;
+        ctx.beginPath();
+        ctx.moveTo(targetX, targetY);
+        ctx.lineTo(baseX, baseY);
+        ctx.lineWidth = 1 / view.zoom;
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.setLineDash([4 / view.zoom, 4 / view.zoom]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.arc(targetX, targetY, radius * 0.65, 0, Math.PI * 2);
+        ctx.lineWidth = 1 / view.zoom;
+        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+        ctx.stroke();
+      }
+
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
     });
@@ -483,20 +607,47 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       boxShadow: 'none',
       border: '1px solid rgba(200, 215, 232, 0.14)',
     }}>
-      <div className="flex items-center justify-between mb-5 flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-indigo-50 dark:bg-white/5 p-1.5 rounded-lg shadow-sm" style={{
-            border: 'none'
-          }}>
-            <Zap size={14} className="text-indigo-500 dark:text-white/70" />
-          </div>
-          <div>
-            <h2 className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-widest">
-              Impact Map
-            </h2>
+      <div className="flex items-center justify-between mb-5 flex-shrink-0 relative">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs sm:text-sm font-bold text-gray-500 dark:text-white/80 uppercase tracking-[0.3em]">
+            Impact Map
+          </h2>
+          <div className="relative">
+            <button
+              onClick={() => setShowGuide((prev) => !prev)}
+              className="w-6 h-6 flex items-center justify-center bg-white/85 dark:bg-slate-900/80 rounded-full shadow-sm border border-white/60 dark:border-white/20 text-gray-500 dark:text-gray-200 hover:bg-white dark:hover:bg-slate-900 transition"
+              aria-label="Impact map guide"
+            >
+              <HelpCircle size={13} />
+            </button>
+            {showGuide && (
+              <div className="absolute left-0 mt-2 w-60 bg-white/95 dark:bg-slate-900/95 text-[10px] text-gray-600 dark:text-gray-200 rounded-2xl border border-white/60 dark:border-white/20 shadow-xl p-4 z-30">
+                <div className="font-bold uppercase tracking-widest text-gray-500 dark:text-gray-300 mb-2">
+                  Impact Map Guide
+                </div>
+                <ul className="space-y-1.5 list-disc list-inside leading-relaxed">
+                  <li>X축: Net Flow (← 순매도 | 순매수 →)</li>
+                  <li>Y축: ROI (↓ 손실 | 수익 ↑)</li>
+                  <li>버블 크기: ATOM↔ATOMONE 거래량 (포화 ≥ {volumeCapLabel})</li>
+                  <li>색상: ATOM / ATOMONE / MIXED</li>
+                  <li>점선·고스트는 원래 좌표를 나타내며, 겹침 완화를 위한 시각적 보정입니다.</li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
-
+        <div className="flex items-center gap-3 bg-white/90 dark:bg-white/10 rounded-full px-4 py-1.5 shadow-sm border border-white/60 dark:border-white/15">
+          {[
+            { label: 'ATOM', color: '#EF4444' },
+            { label: 'ATOMONE', color: '#0EA5E9' },
+            { label: 'MIXED', color: '#A855F7' },
+          ].map(({ label, color }) => (
+            <div key={label} className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-100">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+              {label}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div
@@ -549,52 +700,6 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
             </div>
           );
         })()}
-
-        {/* Color Legend Toggle Button */}
-        <button
-          onClick={() => setShowBiasLegend(!showBiasLegend)}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 dark:border-white/10 hover:bg-white dark:hover:bg-slate-900 transition-all z-20"
-          aria-label="Toggle bias legend"
-        >
-          <HelpCircle size={16} className="text-gray-600 dark:text-gray-300" />
-        </button>
-
-        {/* Color Legend */}
-        {showBiasLegend && (
-          <div className="absolute top-14 right-4 bg-white/80 dark:bg-white/7 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 dark:border-[#4ED6E6]/20 z-20 animate-in slide-in-from-top-2 duration-200 max-w-[260px]"
-          style={{}}>
-            <div className="text-[9px] font-bold text-gray-500 dark:text-white/70 uppercase tracking-wider mb-3">Impact Map Guide</div>
-            <div className="space-y-2.5 mb-3">
-              <div className="text-[9px] font-semibold text-gray-600 dark:text-white/70 mb-1.5">체인 선호도 (Chain Bias):</div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
-                <span className="text-[10px] font-semibold text-gray-700 dark:text-white/80">ATOM (ATOM 선호)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0EA5E9' }}></div>
-                <span className="text-[10px] font-semibold text-gray-700 dark:text-white/80">ATOMONE (ATOMONE 선호)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#A855F7' }}></div>
-                <span className="text-[10px] font-semibold text-gray-700 dark:text-white/80">MIXED (혼합)</span>
-              </div>
-            </div>
-            <div className="space-y-2 border-t border-gray-200/50 dark:border-[#4ED6E6]/20 pt-2.5">
-              <div className="text-[9px] font-semibold text-gray-600 dark:text-white/70">Axes:</div>
-              <div className="text-[9px] text-gray-600 dark:text-gray-400 leading-relaxed">
-                <div className="mb-1"><span className="font-semibold">X축:</span> Net Flow (순매수 성향)</div>
-                <div className="mb-1 pl-4 text-gray-500 dark:text-gray-500">← 순매도 | 순매수 →</div>
-                <div className="mb-1"><span className="font-semibold">Y축:</span> ROI (투자 수익률)</div>
-                <div className="pl-4 text-gray-500 dark:text-gray-500">↓ 손실 | 수익 ↑</div>
-              </div>
-            </div>
-            <div className="mt-2.5 pt-2.5 border-t border-gray-200/50 dark:border-[#4ED6E6]/20">
-              <div className="text-[9px] text-gray-500 dark:text-gray-500 italic">
-                버블 크기 = AII (Account Impact Index, 영향력 점수)
-              </div>
-            </div>
-          </div>
-        )}
 
         {loading && (
           <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-30">

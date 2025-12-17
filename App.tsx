@@ -57,6 +57,10 @@ export default function App() {
 
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [tempFilters, setTempFilters] = useState<FilterState>(initialFilters);
+  const rangeKey = useMemo(
+    () => `${filters.dateRange.start || 'min'}_${filters.dateRange.end || 'max'}`,
+    [filters.dateRange]
+  );
 
   const applyFilters = () => {
     setFilters(tempFilters);
@@ -69,7 +73,14 @@ export default function App() {
 
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [nodeDetails, setNodeDetails] = useState<Record<string, NodeData>>({});
+  type NodeDetailEntry = {
+    data: NodeData;
+    requestedRangeKey: string;
+    actualRangeKey: string;
+    isFallback: boolean;
+  };
+
+  const [nodeDetails, setNodeDetails] = useState<Record<string, NodeDetailEntry>>({});
   const [selectedNodeLoading, setSelectedNodeLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [apiStatus, setApiStatus] = useState<'loading' | 'live' | 'mock'>('loading');
@@ -148,31 +159,71 @@ export default function App() {
     [nodes, selectedNodeId]
   );
 
+  const detailEntry = selectedNodeId ? nodeDetails[selectedNodeId] : null;
+
   const selectedNode = useMemo(() => {
     if (!selectedNodeId) return null;
-    return nodeDetails[selectedNodeId] || selectedNodeSummary || null;
-  }, [nodeDetails, selectedNodeId, selectedNodeSummary]);
+    const detail =
+      detailEntry && detailEntry.requestedRangeKey === rangeKey ? detailEntry.data : null;
+    return detail || selectedNodeSummary || null;
+  }, [detailEntry, selectedNodeId, selectedNodeSummary, rangeKey]);
+
+  const hasDetailForRange =
+    !!detailEntry && detailEntry.requestedRangeKey === rangeKey;
+
+  const isFallbackDetail =
+    !!detailEntry &&
+    detailEntry.requestedRangeKey === rangeKey &&
+    detailEntry.isFallback;
 
   useEffect(() => {
     if (!selectedNodeId) return;
-    if (nodeDetails[selectedNodeId]) return;
+    const existing = nodeDetails[selectedNodeId];
+    if (existing && existing.requestedRangeKey === rangeKey) return;
     let cancelled = false;
     setSelectedNodeLoading(true);
-    loadNodeDetail(selectedNodeId)
-      .then((detail) => {
+
+    const fetchDetail = async () => {
+      try {
+        const detail = await loadNodeDetail(selectedNodeId, filters.dateRange);
         if (cancelled) return;
-        setNodeDetails((prev) => ({ ...prev, [selectedNodeId]: detail }));
-      })
-      .catch((err) => {
-        console.error('Failed to fetch node detail', err);
-      })
-      .finally(() => {
+        setNodeDetails((prev) => ({
+          ...prev,
+          [selectedNodeId]: {
+            data: detail,
+            requestedRangeKey: rangeKey,
+            actualRangeKey: rangeKey,
+            isFallback: false,
+          },
+        }));
+      } catch (error) {
+        console.warn('Range-specific detail fetch failed, retrying without range.', error);
+        try {
+          const fallbackDetail = await loadNodeDetail(selectedNodeId);
+          if (cancelled) return;
+          setNodeDetails((prev) => ({
+            ...prev,
+            [selectedNodeId]: {
+              data: fallbackDetail,
+              requestedRangeKey: rangeKey,
+              actualRangeKey: 'FULL_DATA',
+              isFallback: true,
+            },
+          }));
+        } catch (fallbackError) {
+          console.error('Failed to fetch node detail', fallbackError);
+        }
+      } finally {
         if (!cancelled) setSelectedNodeLoading(false);
-      });
+      }
+    };
+
+    fetchDetail();
+
     return () => {
       cancelled = true;
     };
-  }, [selectedNodeId, nodeDetails]);
+  }, [selectedNodeId, nodeDetails, filters.dateRange, rangeKey]);
 
   const handleSelectNode = useCallback((node: NodeData | null) => {
     setSelectedNodeId(node?.id ?? null);
@@ -210,21 +261,19 @@ export default function App() {
           paddingBottom: '12px' // 필터 패널의 bottom-3 (12px)와 정확히 맞춤
         }}>
           
-          {/* TOP ROW: MAP & INTELLIGENCE - 임팩트 맵 크기 유지, 백테스트만 축소 */}
+          {/* TOP ROW: MAP & INTELLIGENCE - 세로 영역 확대 */}
           <div className="grid grid-cols-12 gap-3 min-h-0" style={{ 
             paddingLeft: '12px',
-            // 임팩트 맵 크기 유지를 위해 flex: 1로 설정하고, 백테스트 패널이 줄어들도록
             flex: '1 1 0%',
-            minHeight: '400px', // 임팩트 맵 최소 크기 보장
-            // maxHeight는 동적으로 계산: 전체 높이 - (백테스트 최소 높이 + gap + padding)
-            maxHeight: 'calc(100% - 362px)', // BOTTOM ROW minHeight(300px) + gap(12px) + padding(24px) + 여유(26px)
+            minHeight: '480px',
+            maxHeight: 'calc(100% - 300px)',
             height: 'auto',
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}>
              
              {/* Impact Map - 크기 유지, 최소 높이 보장 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ 
-               minHeight: '400px', // 임팩트 맵 최소 크기 유지
+               minHeight: '440px',
                height: '100%',
                maxHeight: '100%'
              }}>
@@ -235,12 +284,13 @@ export default function App() {
                   onSelectNode={handleSelectNode} 
                   loading={loading}
                   apiStatus={apiStatus} 
+                  isFallbackDetail={isFallbackDetail}
                 />
              </div>
 
              {/* Node Intelligence - 임팩트 맵과 함께 크기 유지 */}
              <div className="col-span-12 sm:col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-4 h-full min-h-0" style={{
-               minHeight: '400px',
+               minHeight: '440px',
                height: '100%',
                maxHeight: '100%'
              }}>
@@ -248,22 +298,19 @@ export default function App() {
                   selectedNode={selectedNode}
                   slots={slots}
                   setSlots={setSlots}
-                  isLoadingDetail={selectedNodeLoading && !!selectedNodeId && !nodeDetails[selectedNodeId]}
+                  isLoadingDetail={selectedNodeLoading && !!selectedNodeId && !hasDetailForRange}
                 />
              </div>
           </div>
 
-          {/* BOTTOM ROW: SIMULATION ENGINE - 화면 축소 시 높이만 줄어듦, 필터 패널 하단과 정렬 */}
+          {/* BOTTOM ROW: SIMULATION ENGINE - 높이 축소 */}
           <div className="grid grid-cols-12 gap-3 flex-shrink-0" style={{ 
             paddingLeft: '12px',
-            // 화면이 줄어들면 높이를 줄이되, 최소 높이는 유지
-            // flex-shrink-0으로 설정하여 TOP ROW가 먼저 축소되지 않도록
-            minHeight: 'clamp(300px, calc(100vh - 500px), 500px)', // 화면 높이에 따라 동적 조정, 최소 300px
-            maxHeight: '500px',
-            height: 'auto', // flex 컨테이너가 자동으로 높이 계산
+            minHeight: 'clamp(220px, calc(100vh - 560px), 420px)',
+            maxHeight: '420px',
+            height: 'auto',
             overflow: 'hidden',
-            // 필터 패널 하단(bottom-3 = 12px)과 정확히 맞추기 위해 marginBottom 없음
-            marginBottom: '0'
+            marginBottom: 0
           }}>
              <div className="col-span-12 sm:col-span-12 md:col-span-12 lg:col-span-12 xl:col-span-12 h-full">
                <SimulationEngine 

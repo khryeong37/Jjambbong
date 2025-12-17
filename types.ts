@@ -24,6 +24,10 @@ export interface NodeData {
   correlationScore: number; // -1 to 1
   scaleScore: number; // 0-100
   timingScore: number;
+  shareScore?: number;
+  flowCorrelationScore?: number;
+  crossVolume?: number;
+  marketSharePct?: number;
 
   // Detailed Analysis Data
   composition: {
@@ -31,14 +35,47 @@ export interface NodeData {
     ibc: number;
     stake: number;
   };
+  swapProfile?: {
+    cross: SwapProfileBucket;
+    atom: SwapProfileBucket;
+    atone: SwapProfileBucket;
+    other: SwapProfileBucket;
+  };
+  timingDetail?: TimingDetail;
   
   history?: {
     date: string;
-    price: number;
+    price?: number;
+    priceUnified?: number | null;
+    priceAtom?: number | null;
+    priceAtone?: number | null;
     netFlow: number; // Positive = Buy, Negative = Sell
+    netFlowAtom?: number | null;
+    netFlowAtone?: number | null;
+    txCount?: number;
   }[];
   
   description?: string;
+}
+
+export interface SwapProfileBucket {
+  share: number;
+  count: number;
+  volume: number;
+  samples: string[];
+}
+
+export interface TimingDetail {
+  bestLagUnified: number | null;
+  bestLagAtom: number | null;
+  bestLagAtone: number | null;
+  weightAtom: number;
+  weightAtone: number;
+  correlationAtom: number | null;
+  correlationAtone: number | null;
+  unifiedCorrelation: number | null;
+  sampleSizeAtom: number;
+  sampleSizeAtone: number;
 }
 
 export interface MarketData {
