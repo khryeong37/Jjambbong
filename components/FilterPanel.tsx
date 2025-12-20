@@ -94,17 +94,27 @@ const FilterSection: React.FC<{
           <Icon size={14} className="text-gray-400 group-hover:text-gray-600 transition-colors duration-200" />
           <span className="text-xs font-bold tracking-wider text-gray-800 uppercase group-hover:text-gray-900 transition-colors duration-200">{title}</span>
           {description && (
-            <button
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 onHelp?.({ title, description, anchor: rect });
               }}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors duration-200"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  onHelp?.({ title, description, anchor: rect });
+                }
+              }}
+              className="p-1 rounded-full hover:bg-white/20 transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/40"
               aria-label="Show description"
             >
               <HelpCircle size={12} className="text-gray-400 hover:text-gray-600 transition-colors duration-200" />
-            </button>
+            </span>
           )}
         </div>
         <div className="transition-transform duration-400 ease-out" style={{

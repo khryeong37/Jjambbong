@@ -497,12 +497,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   ];
   const metricTooltips = {
     pnl: '총 손익 = 최종 코인 수량 - 초기 코인 수량',
-    avgGain: 'Avg Daily Gain = 총 손익 ÷ 시뮬레이션 일수',
+    roi: 'ROI = (최종 가치 - 초기 가치) ÷ 초기 가치 × 100%',
     value: 'Final Value = 시뮬레이션 종료 시점의 코인 잔고',
   };
   const timelineLength = result?.timeline.length ?? 0;
-  const avgDailyGain =
-    result && timelineLength > 0 ? result.totalPnL / timelineLength : 0;
   const slotContributionTotal = result
     ? result.slotSummaries.reduce((sum, slot) => sum + slot.contribution, 0)
     : 0;
@@ -1252,35 +1250,37 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
           }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] font-bold text-gray-400 dark:text-white/60 uppercase tracking-widest">
-                Avg Daily Gain (Value)
+                ROI (Percent)
               </span>
               <button
                 type="button"
-                title={metricTooltips.avgGain}
-                    className="text-gray-300 dark:text-white/40 hover:text-gray-500 dark:hover:text-white/70 transition-colors"
-                  >
-                    <Info size={12} />
-                  </button>
+                title={metricTooltips.roi}
+                className="text-gray-300 dark:text-white/40 hover:text-gray-500 dark:hover:text-white/70 transition-colors"
+              >
+                <Info size={12} />
+              </button>
             </div>
             <div
-              className="text-2xl font-light tracking-tighter text-gray-900 dark:text-white"
+              className={`text-2xl font-light tracking-tighter ${
+                !result
+                  ? 'text-gray-900 dark:text-white'
+                  : (result.roi ?? 0) >= 0
+                  ? 'text-emerald-500 dark:text-emerald-300'
+                  : 'text-rose-500 dark:text-rose-400'
+              }`}
               style={{
                 transition: 'color 0.5s ease-out, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transform: result && avgDailyGain !== 0 ? 'scale(1.05)' : 'scale(1)',
+                transform: result && (result.roi ?? 0) !== 0 ? 'scale(1.05)' : 'scale(1)',
               }}
             >
-              {result && avgDailyGain >= 0 ? '+' : ''}
-                  {result ? avgDailyGain.toFixed(2) : '0.00'}{' '}
-                  <span className="text-xs font-medium text-gray-600 dark:text-white/70">
-                    {asset}/day
-                  </span>
-                </div>
-                {result && (
-                  <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
-                    ROI {result.roi >= 0 ? '+' : ''}
-                    {result.roi.toFixed(2)}%
-                  </div>
-                )}
+              {result && (result.roi ?? 0) >= 0 ? '+' : ''}
+              {result ? (result.roi ?? 0).toFixed(2) : '0.00'}%
+            </div>
+            {result && (
+              <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
+                초기 {capital.toFixed(0)} {asset} → 최종 {result.finalValue.toFixed(0)} {asset}
+              </div>
+            )}
           </div>
           <div className="flex-1 p-3 bg-gray-900 dark:bg-white/8 rounded-2xl shadow-soft dark:shadow-none border border-gray-900 dark:border-[#4ED6E6]/20 text-right backdrop-blur-sm" style={{}}>
             <div className="flex items-center justify-between mb-1">

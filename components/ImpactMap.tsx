@@ -261,9 +261,9 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     const volumeCap = volumeValues.length ? getPercentile(volumeValues, 99.5) : 0;
     const safeVolumeCap = Math.max(volumeCap, maxObservedVolume, 1);
 
-    // 노드 크기: 교차 거래량을 로그 스케일로 표현 (5%~100% 비율 뒤 다시 px로 변환)
-    const MIN_NODE_SIZE = 12;
-    const MAX_NODE_SIZE = 46;
+    // 노드 크기: 기획서 비율은 유지하되 전체 범위를 축소해 시각적 균형 개선
+    const MIN_NODE_SIZE = 8;
+    const MAX_NODE_SIZE = 32;
     const INACTIVE_NODE_SIZE = 3; // Ghost Node는 더 작게
     const LOG_DENOM = Math.log1p(safeVolumeCap);
 
@@ -310,11 +310,13 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
         yPercent = Math.min(95, Math.max(5, yPercent + (railT - 0.5) * EDGE_VERTICAL_SPREAD));
       }
 
-      // 버블 크기: ATOM↔ATOMONE 교차 거래량 기반 로그 스케일
+      // 버블 크기: ATOM↔ATOMONE 교차 거래량 기반 로그+제곱근 스케일
       const volume = Math.max(0, node._volume || 0);
       const cappedVolume = Math.min(volume, safeVolumeCap);
-      const normalizedVolume = LOG_DENOM > 0 ? Math.log1p(cappedVolume) / LOG_DENOM : 0;
-      const adjustedT = 0.05 + normalizedVolume * 0.95; // 5%~100% 비율
+      const logComponent = LOG_DENOM > 0 ? Math.log1p(cappedVolume) / LOG_DENOM : 0;
+      const sqrtComponent = safeVolumeCap > 0 ? Math.sqrt(cappedVolume / safeVolumeCap) : 0;
+      const normalizedVolume = Math.min(1, Math.max(0, logComponent * 0.45 + sqrtComponent * 0.55));
+      const adjustedT = 0.05 + normalizedVolume * 0.85; // 5%~90% 비율
       const size = node._isActive
         ? MIN_NODE_SIZE + adjustedT * (MAX_NODE_SIZE - MIN_NODE_SIZE)
         : INACTIVE_NODE_SIZE;

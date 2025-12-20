@@ -340,6 +340,45 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     };
   }, [selectedNode?.history]);
 
+  const reliability = useMemo(() => {
+    if (!selectedNode) {
+      return {
+        score: 0,
+        status: '정보 부족',
+        activeDays: 0,
+        txCount: 0,
+        validPoints: 0,
+        coverageRatio: 0,
+        showWarning: false,
+      };
+    }
+
+    const history = selectedNode.history ?? [];
+    const activeDays = selectedNode.activeDays ?? 0;
+    const txCount = selectedNode.txCount ?? 0;
+    const validPoints = history.filter((entry) => Math.abs(entry.netFlow ?? 0) > 0).length;
+    const totalDaysInRange = history.length || activeDays || 1;
+    const coverageRatio = totalDaysInRange > 0 ? validPoints / totalDaysInRange : 0;
+
+    const clamp = (value: number) => Math.max(0, Math.min(1, value));
+    const A = clamp(activeDays / 10);
+    const T = clamp(txCount / 50);
+    const V = clamp(validPoints / 10);
+    const C = clamp(coverageRatio / 0.6);
+    const score = Math.round(100 * (0.3 * A + 0.25 * T + 0.3 * V + 0.15 * C));
+    const status = score >= 70 ? '충분' : score >= 40 ? '보통' : '부족';
+
+    return {
+      score,
+      status,
+      activeDays,
+      txCount,
+      validPoints,
+      coverageRatio,
+      showWarning: score < 40,
+    };
+  }, [selectedNode]);
+
   if (!selectedNode) {
     return (
       <div
@@ -813,6 +852,57 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
                 </div>
                 <div className="text-[10px] text-gray-500 dark:text-gray-400">
                   Flow Correlation Strength: <span className="font-semibold text-gray-700 dark:text-gray-200">{correlationLabel}</span>
+                </div>
+                <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">Reliability</p>
+                      <div className="text-2xl font-black text-gray-900 dark:text-white">
+                        {reliability.score}
+                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500"> /100</span>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                        reliability.status === '충분'
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200'
+                          : reliability.status === '보통'
+                          ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-200'
+                          : 'bg-rose-50 text-rose-600 dark:bg-rose-500/20 dark:text-rose-200'
+                      }`}
+                    >
+                      {reliability.status}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-500 dark:bg-sky-400"
+                      style={{ width: `${Math.min(100, Math.max(0, reliability.score))}%` }}
+                    ></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span>Active Days</span>
+                      <span className="font-semibold">{reliability.activeDays}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Tx Count</span>
+                      <span className="font-semibold">{reliability.txCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Valid Points</span>
+                      <span className="font-semibold">{reliability.validPoints}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Coverage</span>
+                      <span className="font-semibold">{(reliability.coverageRatio * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  {reliability.showWarning && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                      표본이 적어 타이밍/상관 지표는 참고용입니다.
+                    </p>
+                  )}
                 </div>
               </div>
             )}
