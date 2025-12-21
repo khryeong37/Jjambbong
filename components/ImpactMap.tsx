@@ -98,16 +98,30 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastMousePos = useRef({ x: 0, y: 0 });
   const wasDragged = useRef(false);
-  const isDraggingNode = useRef(false);
   const [hoveredNode, setHoveredNode] = useState<{ node: any; x: number; y: number } | null>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStateRef = useRef<{
+    distance: number;
+    contentX: number;
+    contentY: number;
+    startZoom: number;
+  } | null>(null);
+  const viewRef = useRef(view);
+  const hoverRafRef = useRef<number | null>(null);
+  const lastClientPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // 마우스 위치 & 맵 크기 (노드 근접 스케일링용)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
   const [positionedNodes, setPositionedNodes] = useState<any[]>([]);
   const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  const clampZoom = useCallback((value: number) => Math.max(0.5, Math.min(6, value)), []);
 
   // Canvas 크기 동기화
   useEffect(() => {
@@ -129,61 +143,82 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  const applyZoomAtPoint = useCallback(
+    (clientX: number, clientY: number, factor: number) => {
+      if (!mapRef.current) return;
+      const rect = mapRef.current.getBoundingClientRect();
+      const localX = clientX - rect.left;
+      const localY = clientY - rect.top;
 
+      setView((prev) => {
+        const nextZoom = clampZoom(prev.zoom * factor);
+        if (nextZoom === prev.zoom) return prev;
+        const ratio = nextZoom / prev.zoom;
+        return {
+          x: localX - (localX - prev.x) * ratio,
+          y: localY - (localY - prev.y) * ratio,
+          zoom: nextZoom,
+        };
+      });
+    },
+    [clampZoom]
+  );
 
+  useEffect(() => {
+    const element = mapRef.current;
+    if (!element) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const zoomFactor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+      applyZoomAtPoint(event.clientX, event.clientY, zoomFactor);
+    };
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, [applyZoomAtPoint]);
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (!mapRef.current) return;
-
-    const rect = mapRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const zoomFactor = 1.1;
-    const newZoom = e.deltaY < 0 ? view.zoom * zoomFactor : view.zoom / zoomFactor;
-    const clampedZoom = Math.max(0.25, Math.min(4, newZoom));
-    if (clampedZoom === view.zoom) return;
-
-    const zoomRatio = clampedZoom / view.zoom;
-    const newX = mouseX - (mouseX - view.x) * zoomRatio;
-    const newY = mouseY - (mouseY - view.y) * zoomRatio;
-
-    setView({ x: newX, y: newY, zoom: clampedZoom });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
-    e.preventDefault();
-    setIsPanning(true);
-    wasDragged.current = false;
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  };
-
-  // 마우스 이동 핸들러 최적화 (requestAnimationFrame 사용)
   const rafRef = useRef<number | null>(null);
   const pendingUpdateRef = useRef<{ dx: number; dy: number } | null>(null);
 
+  const queuePanDelta = useCallback((dx: number, dy: number) => {
+    const current = pendingUpdateRef.current;
+    if (current) {
+      pendingUpdateRef.current = {
+        dx: current.dx + dx,
+        dy: current.dy + dy,
+      };
+    } else {
+      pendingUpdateRef.current = { dx, dy };
+    }
 
-  const zoomWithCenter = (factor: number) => {
-    if (!mapRef.current) return;
-    const rect = mapRef.current.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      const pending = pendingUpdateRef.current;
+      if (pending) {
+        pendingUpdateRef.current = null;
+        setView((prev) => ({
+          ...prev,
+          x: prev.x + pending.dx,
+          y: prev.y + pending.dy,
+        }));
+      }
+      rafRef.current = null;
+    });
+  }, []);
 
-    const newZoom = view.zoom * factor;
-    const clampedZoom = Math.max(0.25, Math.min(4, newZoom));
-    if (clampedZoom === view.zoom) return;
 
-    const zoomRatio = clampedZoom / view.zoom;
-    const newX = centerX - (centerX - view.x) * zoomRatio;
-    const newY = centerY - (centerY - view.y) * zoomRatio;
+  const zoomWithCenter = useCallback(
+    (factor: number) => {
+      if (!mapRef.current) return;
+      const rect = mapRef.current.getBoundingClientRect();
+      applyZoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
+    },
+    [applyZoomAtPoint]
+  );
 
-    setView({ x: newX, y: newY, zoom: clampedZoom });
-  };
-
-  const zoomIn = () => zoomWithCenter(1.3);
-  const zoomOut = () => zoomWithCenter(1 / 1.3);
+  const zoomIn = useCallback(() => zoomWithCenter(1.3), [zoomWithCenter]);
+  const zoomOut = useCallback(() => zoomWithCenter(1 / 1.3), [zoomWithCenter]);
   const resetView = () => setView({ x: 0, y: 0, zoom: 1 });
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -478,54 +513,138 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     return null;
   }, [mapRef, mapSize, visibleNodes, view]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (mapRef.current && rafRef.current === null) {
-      rafRef.current = requestAnimationFrame(() => {
-        if (mapRef.current) {
-          const rect = mapRef.current.getBoundingClientRect();
-          setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-        }
-        rafRef.current = null;
+  const scheduleHoverUpdate = useCallback(
+    (clientX: number, clientY: number) => {
+      lastClientPosRef.current = { x: clientX, y: clientY };
+      const picked = getNodeAtPosition(clientX, clientY);
+      setHoveredNode(picked);
+      if (!mapRef.current) return;
+      if (hoverRafRef.current !== null) return;
+      hoverRafRef.current = requestAnimationFrame(() => {
+        hoverRafRef.current = null;
+        if (!mapRef.current) return;
+        const rect = mapRef.current.getBoundingClientRect();
+        const { x, y } = lastClientPosRef.current;
+        setMousePos({ x: x - rect.left, y: y - rect.top });
       });
-    }
+    },
+    [getNodeAtPosition]
+  );
 
-    const picked = getNodeAtPosition(e.clientX, e.clientY);
-    setHoveredNode(picked);
-
-    if (!isPanning) return;
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    if (!mapRef.current) return;
     e.preventDefault();
-    if (!wasDragged.current) wasDragged.current = true;
-    const dx = e.clientX - lastMousePos.current.x;
-    const dy = e.clientY - lastMousePos.current.y;
+    mapRef.current.setPointerCapture?.(e.pointerId);
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    wasDragged.current = false;
+    pinchStateRef.current = null;
+    if (pointersRef.current.size === 1) {
+      setIsPanning(true);
+    } else if (pointersRef.current.size >= 2) {
+      const values = Array.from(pointersRef.current.values());
+      const [p1, p2] = values;
+      if (!p1 || !p2) return;
+      const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      const rect = mapRef.current.getBoundingClientRect();
+      const centerLocal = {
+        x: (p1.x + p2.x) / 2 - rect.left,
+        y: (p1.y + p2.y) / 2 - rect.top,
+      };
+      const currentView = viewRef.current;
+      pinchStateRef.current = {
+        distance,
+        contentX: (centerLocal.x - currentView.x) / currentView.zoom,
+        contentY: (centerLocal.y - currentView.y) / currentView.zoom,
+        startZoom: currentView.zoom,
+      };
+    }
+  }, []);
 
-    pendingUpdateRef.current = { dx, dy };
-    if (rafRef.current === null) {
-      rafRef.current = requestAnimationFrame(() => {
-        if (pendingUpdateRef.current) {
-          setView((prev) => ({
-            ...prev,
-            x: prev.x + pendingUpdateRef.current!.dx,
-            y: prev.y + pendingUpdateRef.current!.dy
-          }));
-          pendingUpdateRef.current = null;
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      scheduleHoverUpdate(e.clientX, e.clientY);
+      const previous = pointersRef.current.get(e.pointerId);
+      if (!previous) return;
+      pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointersRef.current.size === 1) {
+        if (e.buttons === 0) {
+          setIsPanning(false);
+          return;
         }
+        e.preventDefault();
+        const dx = e.clientX - previous.x;
+        const dy = e.clientY - previous.y;
+        if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
+          if (!wasDragged.current && Math.hypot(dx, dy) > 1.5) {
+            wasDragged.current = true;
+          }
+          queuePanDelta(dx, dy);
+        }
+      } else if (pointersRef.current.size >= 2) {
+        e.preventDefault();
+        const values = Array.from(pointersRef.current.values());
+        const [p1, p2] = values;
+        if (!p1 || !p2) return;
+        const rect = mapRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+        const centerLocal = {
+          x: (p1.x + p2.x) / 2 - rect.left,
+          y: (p1.y + p2.y) / 2 - rect.top,
+        };
+        if (!pinchStateRef.current) {
+          const currentView = viewRef.current;
+          pinchStateRef.current = {
+            distance,
+            contentX: (centerLocal.x - currentView.x) / currentView.zoom,
+            contentY: (centerLocal.y - currentView.y) / currentView.zoom,
+            startZoom: currentView.zoom,
+          };
+          return;
+        }
+        const start = pinchStateRef.current;
+        const scaleFactor = distance / start.distance;
+        const newZoom = clampZoom(start.startZoom * scaleFactor);
+        const newX = centerLocal.x - start.contentX * newZoom;
+        const newY = centerLocal.y - start.contentY * newZoom;
+        setView({ x: newX, y: newY, zoom: newZoom });
+      }
+    },
+    [clampZoom, queuePanDelta, scheduleHoverUpdate]
+  );
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    mapRef.current?.releasePointerCapture?.(e.pointerId);
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size === 0) {
+      setIsPanning(false);
+      setMousePos(null);
+      setHoveredNode(null);
+      pinchStateRef.current = null;
+      pendingUpdateRef.current = null;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
-      });
+      }
+    } else if (pointersRef.current.size === 1) {
+      pinchStateRef.current = null;
     }
+  }, []);
 
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  }, [getNodeAtPosition, isPanning]);
+  const handlePointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      handlePointerUp(e);
+    },
+    [handlePointerUp]
+  );
 
-  const handleMouseUpOrLeave = useCallback(() => {
-    setIsPanning(false);
-    isDraggingNode.current = false;
-    setMousePos(null);
-    setHoveredNode(null);
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+  const handlePointerLeave = useCallback(() => {
+    if (pointersRef.current.size === 0) {
+      setHoveredNode(null);
+      setMousePos(null);
     }
-    pendingUpdateRef.current = null;
   }, []);
 
   // Canvas 렌더링
@@ -600,6 +719,17 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
     ctx.restore();
   }, [visibleNodes, view, mapSize, selectedNode, hoveredNode]);
 
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (hoverRafRef.current !== null) {
+        cancelAnimationFrame(hoverRafRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] p-5 flex flex-col relative" style={{ 
       height: '100%', 
@@ -662,13 +792,15 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
           backdropFilter: 'blur(16px) saturate(180%)',
           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: 'inset 0 2px 4px rgba(196, 181, 253, 0.1), inset 0 -2px 4px rgba(196, 181, 253, 0.1), 0 4px 16px rgba(196, 181, 253, 0.15)'
+          boxShadow:
+            'inset 0 2px 4px rgba(196, 181, 253, 0.1), inset 0 -2px 4px rgba(196, 181, 253, 0.1), 0 4px 16px rgba(196, 181, 253, 0.15)',
+          touchAction: 'none',
         }}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUpOrLeave}
-        onMouseLeave={handleMouseUpOrLeave}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
         onClick={handleCanvasClick}
       >
         {/* Axes labels */}
