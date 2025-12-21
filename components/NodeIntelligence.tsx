@@ -528,10 +528,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
               <Clock size={12} className="text-gray-400 dark:text-gray-500" />
               <span>Last {formatDate(selectedNode.lastActiveDate)}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Info size={12} />
-              <span>필터와 동일한 기간·코인 맥락</span>
-          </div>
           {isFallbackDetail && (
             <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
               <Info size={12} />
@@ -541,7 +537,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
           {isLoadingDetail && (
             <div className="flex items-center gap-1 text-[10px] text-sky-600 dark:text-sky-400 font-semibold">
               <Info size={12} />
-              필터 변경으로 데이터를 다시 계산 중입니다.
+              데이터 집계를 새로 계산하는 중입니다.
             </div>
           )}
         </div>
@@ -554,7 +550,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 dark:text-white/80 uppercase tracking-wider">Price vs Net Flow</p>
-                <p className="text-[9px] text-gray-400 dark:text-gray-500">필터 기간을 그대로 반영한 일자별 흐름</p>
+                <p className="text-[9px] text-gray-400 dark:text-gray-500">선택한 노드의 일자별 흐름</p>
               </div>
               <div className="bg-gray-50 dark:bg-white/5 p-1 rounded">
                 <TrendingUp size={12} className="text-gray-400 dark:text-gray-300" />
@@ -562,7 +558,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             </div>
             <div className="h-48 rounded-2xl p-4 relative overflow-hidden glass-input border border-gray-100 dark:border-white/10">
               {!processedHistory.data.length ? (
-                <div className="h-full flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">시계열 데이터가 부족합니다.</div>
+                <div className="h-full flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">시계열 데이터를 계산하는 중입니다.</div>
               ) : (
                 <>
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/40 dark:to-black/20 pointer-events-none" />
@@ -605,9 +601,11 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
               </>
             )}
           </div>
-            <p className="text-[9px] text-gray-500 dark:text-gray-500">
-              Price 라인은 필터 기간 전체의 시장 가격을, Net Flow 막대는 ±{processedHistory.flowCapLabel} 범위의 순유입을 의미합니다.
-            </p>
+            {processedHistory.data.length > 0 && (
+              <p className="text-[9px] text-gray-500 dark:text-gray-500">
+                Price 라인은 시장 기준 가격 변화를, Net Flow 막대는 ±{processedHistory.flowCapLabel} 범위의 순유입을 나타냅니다.
+              </p>
+            )}
           </div>
 
           {/* Swap Profile */}
