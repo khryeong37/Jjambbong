@@ -34,6 +34,7 @@ interface NodeIntelligenceProps {
   >;
   isLoadingDetail?: boolean;
   isFallbackDetail?: boolean;
+  onSlotFeedback?: (message: string) => void;
 }
 
 const formatCompactNumber = (value: number | undefined | null, digits = 1) => {
@@ -150,12 +151,11 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
   setSlots,
   isLoadingDetail = false,
   isFallbackDetail = false,
+  onSlotFeedback,
 }) => {
   const [animationKey, setAnimationKey] = useState(0);
   const [addressCopied, setAddressCopied] = useState(false);
-  const [slotFeedback, setSlotFeedback] = useState<string | null>(null);
   const prevNodeId = useRef<string | null>(null);
-  const feedbackTimer = useRef<number>();
   const priceSectionRef = useRef<HTMLDivElement>(null);
   const swapSectionRef = useRef<HTMLDivElement>(null);
   const impactSectionRef = useRef<HTMLDivElement>(null);
@@ -166,14 +166,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     timing: false,
   });
   const [isSwapTooltipActive, setIsSwapTooltipActive] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (feedbackTimer.current) {
-        window.clearTimeout(feedbackTimer.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (selectedNode && selectedNode.id !== prevNodeId.current) {
@@ -224,11 +216,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
       ? `Slot ${slotId}: ${previousNodeName} → ${selectedNode.name} 로 교체되었습니다.`
       : `Slot ${slotId}: ${selectedNode.name} 배치 완료.`;
 
-    setSlotFeedback(feedbackMessage);
-    if (feedbackTimer.current) {
-      window.clearTimeout(feedbackTimer.current);
-    }
-    feedbackTimer.current = window.setTimeout(() => setSlotFeedback(null), 2800);
+    onSlotFeedback?.(feedbackMessage);
   };
 
   const handleCopyAddress = async () => {
@@ -925,11 +913,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             );
           })}
         </div>
-        {slotFeedback && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-3 bg-emerald-500/90 text-white text-[10px] font-semibold px-3 py-1 rounded-full shadow-lg">
-            {slotFeedback}
-          </div>
-        )}
       </div>
     </div>
   );

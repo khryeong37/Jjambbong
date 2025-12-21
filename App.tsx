@@ -97,6 +97,35 @@ export default function App() {
     { id: 'B', node: null, weight: 30, color: '#F472B6' }, // Slot B - Pink
     { id: 'C', node: null, weight: 20, color: '#10B981' }, // Slot C - Green
   ]);
+  const [slotFeedbackMessage, setSlotFeedbackMessage] = useState<string | null>(null);
+  const slotFeedbackTimer = useRef<number | null>(null);
+
+  const handleSlotFeedback = useCallback((message: string) => {
+    if (!message) {
+      if (slotFeedbackTimer.current) {
+        window.clearTimeout(slotFeedbackTimer.current);
+        slotFeedbackTimer.current = null;
+      }
+      setSlotFeedbackMessage(null);
+      return;
+    }
+    setSlotFeedbackMessage(message);
+    if (slotFeedbackTimer.current) {
+      window.clearTimeout(slotFeedbackTimer.current);
+    }
+    slotFeedbackTimer.current = window.setTimeout(() => {
+      setSlotFeedbackMessage(null);
+      slotFeedbackTimer.current = null;
+    }, 2800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (slotFeedbackTimer.current) {
+        window.clearTimeout(slotFeedbackTimer.current);
+      }
+    };
+  }, []);
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -272,11 +301,16 @@ export default function App() {
           }}>
              
              {/* Impact Map - 크기 유지, 최소 높이 보장 */}
-             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0" style={{ 
+             <div className="col-span-12 sm:col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-8 h-full min-h-0 relative" style={{ 
                minHeight: '440px',
                height: '100%',
                maxHeight: '100%'
              }}>
+                {slotFeedbackMessage && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold shadow-lg border border-white/30">
+                    {slotFeedbackMessage}
+                  </div>
+                )}
                 <ImpactMap 
                   nodes={nodes} 
                   selectedNode={selectedNode} 
@@ -299,6 +333,7 @@ export default function App() {
                   slots={slots}
                   setSlots={setSlots}
                   isLoadingDetail={selectedNodeLoading && !!selectedNodeId && !hasDetailForRange}
+                  onSlotFeedback={handleSlotFeedback}
                 />
              </div>
           </div>
