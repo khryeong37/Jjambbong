@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NodeData, SwapProfileBucket } from '../types';
 import {
   Activity,
-  Sparkles,
   TrendingUp,
   BarChart2,
   Info,
@@ -13,7 +12,6 @@ import {
   Clock,
   ChevronDown,
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import {
   ComposedChart,
   Line,
@@ -153,8 +151,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
   isLoadingDetail = false,
   isFallbackDetail = false,
 }) => {
-  const [summary, setSummary] = useState('');
-  const [loadingSummary, setLoadingSummary] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const [addressCopied, setAddressCopied] = useState(false);
   const [slotFeedback, setSlotFeedback] = useState<string | null>(null);
@@ -170,7 +166,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     timing: false,
   });
   const [isSwapTooltipActive, setIsSwapTooltipActive] = useState(false);
-  const geminiApiKey = ''; // Gemini API not exposed on client bundle to avoid key leakage.
 
   useEffect(() => {
     return () => {
@@ -206,40 +201,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     });
   }, [swapProfile]);
 
-  useEffect(() => {
-    if (!selectedNode) {
-      setSummary('');
-      return;
-    }
-
-    const generateSummary = async () => {
-      setLoadingSummary(true);
-      const impactLevel = selectedNode.size >= 70 ? 'high' : selectedNode.size >= 40 ? 'moderate' : 'emerging';
-      const strategyType =
-        selectedNode.composition.swap > 50
-          ? 'active trading'
-          : selectedNode.composition.stake > 40
-          ? 'staking-focused'
-          : 'balanced';
-      const timingDesc =
-        selectedNode.timing === 'LEADING'
-          ? 'tends to lead price moves'
-          : selectedNode.timing === 'LAGGING'
-          ? 'usually reacts after trends form'
-          : 'moves with the market';
-
-      setSummary(
-        `This ${impactLevel}-impact account (AII ${Math.floor(
-          selectedNode.size,
-        )}) pursues ${strategyType} with ${selectedNode.netBuyRatio > 0 ? 'accumulation' : 'distribution'} bias. It ${timingDesc} and shows correlation ${selectedNode.correlationScore?.toFixed(
-          2,
-        )}, indicating ${selectedNode.bias} ecosystem strength.`,
-      );
-      setLoadingSummary(false);
-    };
-
-    generateSummary();
-  }, [selectedNode]);
 
   const handleAssignToSlot = (slotId: string) => {
     if (!selectedNode) return;
@@ -908,20 +869,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             )}
           </div>
 
-          {/* Narrative */}
-          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-500/10 dark:to-slate-900/40 p-[2px]">
-            <div className="bg-white/90 dark:bg-slate-950/80 rounded-[18px] p-4 flex gap-3">
-              <div className="bg-emerald-100 dark:bg-emerald-500/20 p-2 rounded-xl">
-                <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-300 uppercase tracking-widest mb-1">Narrative Insight</p>
-                <p className="text-[11px] text-gray-700 dark:text-gray-200 leading-relaxed">
-                  {loadingSummary ? '분석 생성 중...' : summary || 'AI 분석을 불러올 수 없습니다.'}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

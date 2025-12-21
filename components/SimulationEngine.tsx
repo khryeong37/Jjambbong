@@ -452,6 +452,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   const hasAllocation = allocatedCapital > 0;
   const filledSlots = slots.filter((slot) => slot.node && slot.weight > 0);
   const hasValidSlots = filledSlots.length >= 2;
+  const weightsAligned = totalAllocated === 100;
   const capitalError =
     capital <= 0
       ? '0 이상의 값을 입력하세요.'
@@ -460,9 +461,42 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       : null;
   const capitalWarning =
     capitalError ? null : capital > 1000000 ? '코인의 수가 너무 많습니다.' : null;
-  const isRunnable = hasValidSlots && !capitalError;
+  const isRunnable = hasValidSlots && weightsAligned;
   const capitalMessage = capitalError || capitalWarning;
-  const capitalMessageClass = capitalError ? 'text-rose-500' : 'text-amber-500';
+  const [capitalToast, setCapitalToast] = useState<{ message: string; type: 'error' | 'warning' } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const showCapitalToast = useCallback(
+    (message: string, type: 'error' | 'warning') => {
+      setCapitalToast({ message, type });
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      toastTimerRef.current = window.setTimeout(() => {
+        setCapitalToast(null);
+        toastTimerRef.current = null;
+      }, 2600);
+    },
+    []
+  );
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = null;
+      }
+    };
+  }, []);
+  useEffect(() => {
+    if (!capitalMessage) {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = null;
+      }
+      setCapitalToast(null);
+      return;
+    }
+    showCapitalToast(capitalMessage, capitalError ? 'error' : 'warning');
+  }, [capitalMessage, capitalError, capital, showCapitalToast]);
   const currentMarketData = asset === 'ATOM' ? atomData : oneData;
 
   const chartData = useMemo(
@@ -492,7 +526,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   }, [result]);
   const runRequirements = [
     { label: 'Slot 2개 이상', met: hasValidSlots },
-    { label: '비중 합계 100%', met: Math.round(totalAllocated) === 100 },
+    { label: '비중 합계 100%', met: weightsAligned },
     { label: '초기 코인 100개 이상', met: !capitalError },
   ];
   const metricTooltips = {
@@ -527,6 +561,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
 
   const handleRunSimulation = useCallback(() => {
     if (!isRunnable || !currentMarketData) return;
+    if (capitalError) {
+      showCapitalToast(capitalError, 'error');
+      return;
+    }
     setIsSimulating(true);
     setTimeout(() => {
       const config: SimulationConfig = {
@@ -540,7 +578,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       setHasRun(true);
       setIsSimulating(false);
     }, 800);
-  }, [isRunnable, currentMarketData, capital, asset, strategyMode, slots]);
+  }, [isRunnable, currentMarketData, capitalError, capital, asset, strategyMode, slots, showCapitalToast]);
 
   useEffect(() => {
     const weightA = slots[0]?.weight ?? 0;
@@ -693,67 +731,79 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       }}>
         <div className="px-4 py-4 border-b border-white/20 dark:border-[#4ED6E6]/20 shrink-0">
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-white/6 rounded-2xl px-4 py-3 border border-gray-100 dark:border-[#4ED6E6]/20 flex items-center justify-between shadow-sm group hover:border-indigo-100 dark:hover:border-[#4ED6E6]/40 transition-colors backdrop-blur-sm"             style={{
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none'
-            }}>
-              <div className="flex items-center gap-2">
-                <div className="bg-green-50 p-1 rounded-full" style={{
-                  border: 'none'
-                }}>
-                  <DollarSign
-                    size={10}
-                    className="text-green-600"
+            <div className="relative">
+              <div className="bg-white dark:bg-white/6 rounded-2xl px-4 py-3 border border-gray-100 dark:border-[#4ED6E6]/20 flex items-center justify-between shadow-sm group hover:border-indigo-100 dark:hover:border-[#4ED6E6]/40 transition-colors backdrop-blur-sm" style={{
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+              }}>
+                <div className="flex items-center gap-2">
+                  <div className="bg-green-50 p-1 rounded-full" style={{
+                    border: 'none'
+                  }}>
+                    <DollarSign
+                      size={10}
+                      className="text-green-600"
+                    />
+                  </div>
+                  <input
+                    type="number"
+                    value={capital}
+                    min={0}
+                    disabled={controlsDisabled}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setCapital(Number.isNaN(next) ? 0 : Math.max(0, next));
+                    }}
+                    className="bg-transparent text-sm font-bold text-gray-900 dark:text-white w-20 focus:outline-none disabled:text-gray-400"
                   />
                 </div>
-                <input
-                  type="number"
-                  value={capital}
-                  min={0}
-                  disabled={controlsDisabled}
-                  onChange={(e) => {
-                    const next = Number(e.target.value);
-                    setCapital(Number.isNaN(next) ? 0 : Math.max(0, next));
-                  }}
-                  className="bg-transparent text-sm font-bold text-gray-900 dark:text-white w-20 focus:outline-none disabled:text-gray-400"
-                />
+                <span className="text-[8px] font-bold text-gray-300 dark:text-white/60 uppercase tracking-wider">
+                  INITIAL COINS
+                </span>
               </div>
-              <span className="text-[8px] font-bold text-gray-300 dark:text-white/60 uppercase tracking-wider">
-                INITIAL COINS
-              </span>
             </div>
-            {capitalMessage && (
-              <div className={`col-span-2 text-[9px] font-semibold ${capitalMessageClass}`}>
-                {capitalMessage}
+            <div className="relative">
+              {capitalToast && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                  <div
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-semibold shadow-xl backdrop-blur-lg border ${
+                      capitalToast.type === 'error'
+                        ? 'bg-rose-50/95 text-rose-600 border-rose-100 dark:bg-rose-500/30 dark:text-rose-100 dark:border-rose-400/40'
+                        : 'bg-amber-50/95 text-amber-700 border-amber-100 dark:bg-amber-400/30 dark:text-amber-100 dark:border-amber-300/40'
+                    }`}
+                  >
+                    {capitalToast.message}
+                  </div>
+                </div>
+              )}
+              <div className="flex bg-white dark:bg-white/5 border border-gray-100 dark:border-[#4ED6E6]/20 rounded-2xl overflow-hidden p-1 shadow-sm backdrop-blur-sm" style={{
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+              }}>
+                <button
+                  disabled={controlsDisabled}
+                  onClick={() => setAsset('ATOM')}
+                  className={`flex-1 text-[9px] font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    asset === 'ATOM'
+                      ? 'bg-red-50 dark:bg-red-500/10 text-red-500 shadow-sm'
+                      : 'text-gray-400 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  ATOM
+                </button>
+                <div className="w-px bg-transparent" />
+                <button
+                  disabled={controlsDisabled}
+                  onClick={() => setAsset('ATOMONE')}
+                  className={`flex-1 text-[9px] font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    asset === 'ATOMONE'
+                      ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-500 shadow-sm'
+                      : 'text-gray-400 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  ONE
+                </button>
               </div>
-            )}
-            <div className="flex bg-white dark:bg-white/5 border border-gray-100 dark:border-[#4ED6E6]/20 rounded-2xl overflow-hidden p-1 shadow-sm backdrop-blur-sm"             style={{
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none'
-            }}>
-              <button
-                disabled={controlsDisabled}
-                onClick={() => setAsset('ATOM')}
-                className={`flex-1 text-[9px] font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  asset === 'ATOM'
-                    ? 'bg-red-50 dark:bg-red-500/10 text-red-500 shadow-sm'
-                    : 'text-gray-400 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5'
-                }`}
-              >
-                ATOM
-              </button>
-              <div className="w-px bg-transparent" />
-              <button
-                disabled={controlsDisabled}
-                onClick={() => setAsset('ATOMONE')}
-                className={`flex-1 text-[9px] font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  asset === 'ATOMONE'
-                    ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-500 shadow-sm'
-                    : 'text-gray-400 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5'
-                }`}
-              >
-                ONE
-              </button>
             </div>
           </div>
         </div>
