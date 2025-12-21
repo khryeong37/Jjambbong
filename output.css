@@ -1516,10 +1516,6 @@ input[type="date"].date-input-no-icon {
   min-width: 0px;
 }
 
-.max-w-\[220px\] {
-  max-width: 220px;
-}
-
 .max-w-xs {
   max-width: 20rem;
 }
@@ -1745,12 +1741,6 @@ input[type="date"].date-input-no-icon {
 
 .gap-8 {
   gap: 2rem;
-}
-
-.space-y-0\.5 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.125rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.125rem * var(--tw-space-y-reverse));
 }
 
 .space-y-1 > :not([hidden]) ~ :not([hidden]) {
@@ -2277,10 +2267,6 @@ input[type="date"].date-input-no-icon {
 
 .pt-0 {
   padding-top: 0px;
-}
-
-.pt-1 {
-  padding-top: 0.25rem;
 }
 
 .pt-4 {
@@ -3300,11 +3286,6 @@ input[type="date"].date-input-no-icon {
 
   .dark\:bg-sky-500\/10 {
     background-color: rgb(14 165 233 / 0.1);
-  }
-
-  .dark\:bg-slate-900 {
-    --tw-bg-opacity: 1;
-    background-color: rgb(15 23 42 / var(--tw-bg-opacity, 1));
   }
 
   .dark\:bg-slate-900\/80 {

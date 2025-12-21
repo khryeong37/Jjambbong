@@ -158,6 +158,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
   const prevNodeId = useRef<string | null>(null);
   const priceSectionRef = useRef<HTMLDivElement>(null);
   const swapSectionRef = useRef<HTMLDivElement>(null);
+  const swapChartRef = useRef<HTMLDivElement>(null);
   const impactSectionRef = useRef<HTMLDivElement>(null);
   const assignSectionRef = useRef<HTMLDivElement>(null);
   const [openSections, setOpenSections] = useState({
@@ -428,37 +429,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     );
   };
 
-  const swapProfileTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const entry = payload[0].payload;
-    return (
-      <div className="text-[10px] space-y-1 bg-white dark:bg-slate-900 border border-white/40 dark:border-white/10 rounded-lg p-3 shadow-lg max-w-[220px]">
-        <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: entry.color }}
-          ></span>
-          {entry.label}
-        </div>
-        <div className="text-gray-600 dark:text-gray-300">
-          {entry.share.toFixed(1)}% · {entry.count} tx
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 leading-relaxed">{entry.description}</p>
-        {entry.samples?.length ? (
-          <div className="pt-1 border-t border-dashed border-gray-200 dark:border-white/10">
-            <div className="text-[9px] font-semibold text-gray-500 dark:text-gray-400 mb-1">대표 경로</div>
-            <ul className="space-y-0.5">
-              {entry.samples.map((sample: string, idx: number) => (
-                <li key={`${sample}-${idx}`} className="text-gray-600 dark:text-gray-300">
-                  • {sample}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    );
-  };
 
   return (
     <div
@@ -630,7 +600,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
             {openSections.swap && (
               <div className="mt-4 rounded-2xl border border-gray-100 dark:border-[#4ED6E6]/20 bg-gray-50 dark:bg-white/5 p-4 space-y-4">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                  <div className="w-32 h-32 relative mx-auto">
+                  <div className="w-32 h-32 relative mx-auto" ref={swapChartRef}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -646,7 +616,7 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
                             <Cell key={entry.key} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip content={swapProfileTooltip} />
+                        <Tooltip wrapperStyle={{ display: 'none' }} />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
