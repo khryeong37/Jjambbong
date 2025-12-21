@@ -36,13 +36,24 @@ type SlotState = {
 
 const SLOT_IDS: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C'];
 
-const SLOT_COLORS: Record<
-  string,
+const NEUTRAL_SLOT_COLOR = {
+  solid: '#94A3B8',
+  soft: 'rgba(148, 163, 184, 0.18)',
+  border: '#475569',
+};
+
+const BIAS_COLORS: Record<
+  'ATOM' | 'ATOMONE' | 'MIXED',
   { solid: string; soft: string; border: string }
 > = {
-  A: { solid: '#3B82F6', soft: 'rgba(59, 130, 246, 0.12)', border: '#1d4ed8' },
-  B: { solid: '#F472B6', soft: 'rgba(244, 114, 182, 0.15)', border: '#db2777' },
-  C: { solid: '#10B981', soft: 'rgba(16, 185, 129, 0.12)', border: '#059669' },
+  ATOM: { solid: '#EF4444', soft: 'rgba(239, 68, 68, 0.15)', border: '#b91c1c' },
+  ATOMONE: { solid: '#0EA5E9', soft: 'rgba(14, 165, 233, 0.18)', border: '#0369a1' },
+  MIXED: { solid: '#A855F7', soft: 'rgba(168, 85, 247, 0.18)', border: '#7e22ce' },
+};
+
+const getBiasColor = (bias?: NodeData['bias']) => {
+  if (!bias) return NEUTRAL_SLOT_COLOR;
+  return BIAS_COLORS[bias as keyof typeof BIAS_COLORS] || BIAS_COLORS.MIXED;
 };
 
 const truncateAddress = (addr?: string) => {
@@ -79,13 +90,6 @@ const normalizeSlotWeights = (slotList: SlotState[]) => {
       : { ...slot, weight: normalized };
   });
 };
-
-const getSlotColor = (slotId: string) =>
-  SLOT_COLORS[slotId] || {
-    solid: '#94a3b8',
-    soft: 'rgba(148, 163, 184, 0.2)',
-    border: '#475569',
-  };
 
 /**
  * GLSL 3D Simplex Noise (webgl-noise)
@@ -713,8 +717,15 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   const slotSegments = slots.map((slot) => ({
     id: slot.id,
     hasNode: !!slot.node,
-    color: getSlotColor(slot.id),
+    color: getBiasColor(slot.node?.bias as NodeData['bias']),
   }));
+  const getSlotColorForId = useCallback(
+    (slotId: string) => {
+      const slot = slots.find((s) => s.id === slotId);
+      return getBiasColor(slot?.node?.bias as NodeData['bias']);
+    },
+    [slots]
+  );
 
   return (
     <div className="h-full glass-card-light dark:glass-card-dark rounded-[32px] flex relative overflow-hidden" style={{
@@ -951,7 +962,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               const slotHasNode = slotSegments[index].hasNode;
               const infoLine = slot.node
                 ? truncateAddress(slot.node.address || slot.node.id)
-                : '우측 패널에서 계정을 지정하세요.';
+                : '상단 패널에서 계정을 지정하세요.';
               
               return (
                 <div
@@ -1239,7 +1250,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   Assign nodes to Slot A/B/C and distribute capital to enable backtesting.
                 </p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-                  우측 상세 패널에서 슬롯을 채우고 비중이 100%가 되면 시뮬레이션이 활성화됩니다. 최소 2개의 슬롯을 갖춰야 합니다.
+                  상단 상세 패널에서 슬롯을 채우고 비중이 100%가 되면 시뮬레이션이 활성화됩니다. 최소 2개의 슬롯을 갖춰야 합니다.
                 </p>
               </div>
             )}
@@ -1375,7 +1386,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                 <>
               <div className="flex flex-wrap items-center gap-2 mb-3 text-[9px] font-semibold uppercase tracking-widest text-gray-400 dark:text-white/50">
                 {SLOT_IDS.map((slotId) => {
-                  const slotColor = getSlotColor(slotId);
+                  const slotColor = getSlotColorForId(slotId);
                   const isActive = visibleSlotLines[slotId];
                   return (
                     <button
@@ -1487,7 +1498,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     isAnimationActive={true}
                   />
                   {SLOT_IDS.map((slotId) => {
-                    const slotColor = getSlotColor(slotId);
+                    const slotColor = getSlotColorForId(slotId);
                     return (
                       <Line
                         key={slotId}

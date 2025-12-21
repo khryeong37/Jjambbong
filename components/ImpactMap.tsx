@@ -805,7 +805,7 @@ const ImpactMap: React.FC<ImpactMapProps> = ({
       >
         {/* Axes labels */}
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 dark:text-white/80 rotate-[-90deg] origin-left pointer-events-none">
-          ROI (투자 수익률) ↑
+          ROI (투자 수익률) →
         </div>
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400 dark:text-white/80 pointer-events-none">
           Net Flow (순매수 성향) →
