@@ -16,6 +16,7 @@ import {
   Info,
 } from 'lucide-react';
 import { calculateSimulation } from '../utils/mockData';
+import { computeSlotReturn, normalizeWeights, SlotReturnResult } from '../utils/backtest';
 import {
   AreaChart,
   Area,
@@ -51,6 +52,25 @@ const BIAS_COLORS: Record<
   MIXED: { solid: '#A855F7', soft: 'rgba(168, 85, 247, 0.18)', border: '#7e22ce' },
 };
 
+const BASE_DENOM_MAP: Record<'ATOM' | 'ATOMONE', string[]> = {
+  ATOM: ['ATOM', 'UATOM', 'IBCUATOM', 'COSMOSHUB'],
+  ATOMONE: ['ATOMONE', 'ATONE', 'UATONE'],
+};
+
+const FLOW_EPSILON = 1e-6;
+const SLOT_REASON_MESSAGES: Record<string, string> = {
+  EMPTY_SLOT: '슬롯에 계정을 배치하세요.',
+  NO_NODE_HISTORY: '이 계정에는 히스토리가 없습니다.',
+  NO_SWAPS_IN_RANGE: '선택한 기간에 활동 기록이 없습니다.',
+  NO_ACTIVITY_IN_RANGE: '선택한 기간에 활동 기록이 없습니다.',
+  NO_SWAP_COUNT: '스왑 집계가 부족합니다.',
+  NO_ATOM_FLOW: 'ATOM 기준 거래가 없습니다.',
+  NO_ATOMONE_FLOW: 'ATOMONE 기준 거래가 없습니다.',
+  SLOT_COMPUTE_ERROR: '슬롯 계산에 실패했습니다.',
+  INVALID_RETURN: '올바른 배율을 계산할 수 없습니다.',
+  OK: '',
+};
+
 const getBiasColor = (bias?: NodeData['bias']) => {
   if (!bias) return NEUTRAL_SLOT_COLOR;
   return BIAS_COLORS[bias as keyof typeof BIAS_COLORS] || BIAS_COLORS.MIXED;
@@ -63,32 +83,81 @@ const truncateAddress = (addr?: string) => {
 };
 
 const normalizeSlotWeights = (slotList: SlotState[]) => {
-  const activeIndices = slotList
-    .map((slot, idx) => (slot.node ? idx : null))
-    .filter((idx): idx is number => idx !== null);
-
-  if (activeIndices.length === 0) {
+  const activeSlots = slotList.filter((slot) => slot.node);
+  if (!activeSlots.length) {
     return slotList.map((slot) =>
       slot.weight === 0 ? slot : { ...slot, weight: 0 }
     );
   }
-
-  const totalWeight = activeIndices.reduce(
-    (sum, idx) => sum + slotList[idx].weight,
-    0
-  );
-  const fallback = 100 / activeIndices.length;
-
-  return slotList.map((slot, idx) => {
-    if (!slot.node) {
-      return slot.weight === 0 ? slot : { ...slot, weight: 0 };
+  const sum = activeSlots.reduce((total, slot) => total + Math.max(0, slot.weight), 0);
+  const normalized = slotList.map((slot) => {
+    if (!slot.node) return { ...slot, weight: 0 };
+    if (sum === 0) {
+      return { ...slot, weight: 100 / activeSlots.length };
     }
-    const normalized =
-      totalWeight === 0 ? fallback : (slot.weight / totalWeight) * 100;
-    return Math.abs(normalized - slot.weight) < 0.01
-      ? slot
-      : { ...slot, weight: normalized };
+    return { ...slot, weight: (Math.max(0, slot.weight) / sum) * 100 };
   });
+  let remainder = 100 - normalized.reduce((total, slot) => total + slot.weight, 0);
+  for (const slot of normalized) {
+    if (!slot.node) continue;
+    const adjustment = Math.min(remainder, 0.01);
+    slot.weight += adjustment;
+    remainder -= adjustment;
+    if (Math.abs(remainder) < 0.01) break;
+  }
+  return normalized.map((slot) => ({
+    ...slot,
+    weight: Number(Math.max(0, Math.min(100, slot.weight)).toFixed(2)),
+  }));
+};
+
+const normalizeDateString = (value?: string | Date | null) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().slice(0, 10);
+  }
+  try {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return value.slice(0, 10);
+  } catch {
+    return null;
+  }
+};
+
+const addDaysUTC = (dateOnly: string, days: number) => {
+  const parsed = new Date(`${dateOnly}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+};
+
+const buildFallbackHistoryFromSlots = (slots: SlotState[]) => {
+  const dateSet = new Set<string>();
+  slots.forEach((slot) => {
+    slot.node?.history?.forEach((entry) => {
+      const normalized = normalizeDateString(entry.date);
+      if (normalized) dateSet.add(normalized);
+    });
+  });
+  let sortedDates = Array.from(dateSet).sort((a, b) => a.localeCompare(b));
+  if (!sortedDates.length) {
+    const today = new Date();
+    const fallback: string[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setUTCDate(d.getUTCDate() - i);
+      fallback.push(d.toISOString().slice(0, 10));
+    }
+    sortedDates = fallback;
+  }
+  return sortedDates.map((date, idx) => ({
+    date,
+    price: 1 + idx * 0.01,
+  }));
 };
 
 /**
@@ -380,7 +449,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
   slots,
   setSlots,
 }) => {
-  
+  const isDev = import.meta.env.DEV;
   // Track which slots just received a new node for animation
   const [animatingSlots, setAnimatingSlots] = useState<{ [key: string]: boolean }>({});
   const prevSlotsRef = useRef<{ [key: string]: string | null }>({});
@@ -442,6 +511,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       return acc;
     }, {} as Record<string, boolean>)
   );
+  const [simulationError, setSimulationError] = useState<string | null>(null);
 
   const controlsDisabled = isSimulating;
   const totalWeightWithNode = slots.reduce(
@@ -454,8 +524,6 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       ? (capital * totalWeightWithNode) / 100
       : 0;
   const hasAllocation = allocatedCapital > 0;
-  const filledSlots = slots.filter((slot) => slot.node && slot.weight > 0);
-  const hasValidSlots = filledSlots.length >= 2;
   const weightsAligned = totalAllocated === 100;
   const capitalError =
     capital <= 0
@@ -465,7 +533,6 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       : null;
   const capitalWarning =
     capitalError ? null : capital > 1000000 ? '코인의 수가 너무 많습니다.' : null;
-  const isRunnable = hasValidSlots && weightsAligned;
   const capitalMessage = capitalError || capitalWarning;
   const [capitalToast, setCapitalToast] = useState<{ message: string; type: 'error' | 'warning' } | null>(null);
   const toastTimerRef = useRef<number | null>(null);
@@ -482,6 +549,22 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
     },
     []
   );
+  const currentMarketData = asset === 'ATOM' ? atomData : oneData;
+  const fallbackHistory = useMemo(() => buildFallbackHistoryFromSlots(slots), [slots]);
+  const fallbackMarketData = useMemo(
+    () => ({
+      price: 1,
+      change24h: 0,
+      marketCap: 0,
+      volume24h: 0,
+      history: fallbackHistory,
+    }),
+    [fallbackHistory]
+  );
+  const effectiveMarketData =
+    currentMarketData && currentMarketData.history && currentMarketData.history.length > 0
+      ? currentMarketData
+      : fallbackMarketData;
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
@@ -501,7 +584,137 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
     }
     showCapitalToast(capitalMessage, capitalError ? 'error' : 'warning');
   }, [capitalMessage, capitalError, capital, showCapitalToast]);
-  const currentMarketData = asset === 'ATOM' ? atomData : oneData;
+  useEffect(() => {
+    setSimulationError(null);
+  }, [slots, capital, asset, currentMarketData]);
+  const timelineDates = useMemo(() => {
+    if (!effectiveMarketData?.history?.length) return null;
+    const normalizedDates = effectiveMarketData.history
+      .map((h) => normalizeDateString(h.date))
+      .filter((d): d is string => Boolean(d));
+    const unique = Array.from(new Set(normalizedDates)).sort((a, b) =>
+      a.localeCompare(b)
+    );
+    return unique.length ? unique : null;
+  }, [effectiveMarketData]);
+  const timelineStart = timelineDates?.[0] ?? null;
+  const timelineEndExclusive =
+    timelineDates && timelineDates.length
+      ? addDaysUTC(timelineDates[timelineDates.length - 1], 1)
+      : null;
+  const slotHistoryDiagnostics = useMemo(() => {
+    const range =
+      timelineStart && timelineEndExclusive
+        ? { start: timelineStart, endExclusive: timelineEndExclusive }
+        : undefined;
+    return slots.reduce<Record<string, SlotReturnResult>>((acc, slot) => {
+      acc[slot.id] = computeSlotReturn(slot, asset, range);
+      return acc;
+    }, {});
+  }, [slots, asset, timelineStart, timelineEndExclusive]);
+  const slotsWithValidData = slots.filter(
+    (slot) => slot.weight > 0 && slotHistoryDiagnostics[slot.id]?.status === 'ok'
+  );
+  const rawWeights = useMemo(() => {
+    return slots.reduce<Record<string, number>>((acc, slot) => {
+      acc[slot.id] = slot.weight;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [slots]);
+  const normalizedWeightFractions = useMemo(
+    () => normalizeWeights(slots, slotHistoryDiagnostics),
+    [slots, slotHistoryDiagnostics]
+  );
+  const hasValidSlots = slotsWithValidData.length >= 2;
+  const missingHistorySlots = slots.filter(
+    (slot) =>
+      slot.weight > 0 &&
+      slotHistoryDiagnostics[slot.id]?.status !== 'ok'
+  );
+  const runBlockingReasons: string[] = [];
+  if (!hasValidSlots) {
+    if (missingHistorySlots.length > 0) {
+      missingHistorySlots.forEach((slot) => {
+        const reason = slotHistoryDiagnostics[slot.id]?.reason || '데이터 부족';
+        const reasonText = SLOT_REASON_MESSAGES[reason] || reason;
+        runBlockingReasons.push(`Slot ${slot.id}: ${reasonText}`);
+      });
+    } else {
+      runBlockingReasons.push('유효 데이터 슬롯 2개 필요');
+    }
+  }
+  if (capitalError) {
+    runBlockingReasons.push(capitalError);
+  } else if (capital < 100) {
+    runBlockingReasons.push('초기 코인 100개 이상 필요');
+  }
+  if (missingHistorySlots.length > 0 && !runBlockingReasons.some((r) => r.includes('Slot'))) {
+    runBlockingReasons.push(
+      `데이터 없음: ${missingHistorySlots
+        .map((slot) => {
+          const reason = slotHistoryDiagnostics[slot.id]?.reason || '데이터 부족';
+          const reasonText = SLOT_REASON_MESSAGES[reason] || reason;
+          return `Slot ${slot.id} (${reasonText})`;
+        })
+        .join(', ')}`
+    );
+  }
+  const canRun =
+    runBlockingReasons.length === 0 &&
+    !capitalError &&
+    capital >= 100;
+  const historyBlockingReasons = runBlockingReasons.filter((reason) =>
+    reason.includes('Slot')
+  );
+  const historyBlocked = !canRun && historyBlockingReasons.length > 0;
+  const missingSlotMessages = missingHistorySlots.map((slot) => {
+    const reasonKey = slotHistoryDiagnostics[slot.id]?.reason || 'NO_SWAPS_IN_RANGE';
+    const reasonText = SLOT_REASON_MESSAGES[reasonKey] || reasonKey;
+    return `Slot ${slot.id} – ${reasonText}`;
+  });
+  useEffect(() => {
+    if (!isDev) return;
+    console.groupCollapsed(`[Simulation][SlotHistory] baseAsset=${asset}`);
+    slots.forEach((slot) => {
+      const diag = slotHistoryDiagnostics[slot.id];
+      if (!diag) return;
+      console.log(`Slot ${slot.id}`, {
+        slotId: slot.id,
+        rawSwapCountTotal: diag.rawSwapCountTotal,
+        rawSwapCountInRange: diag.rawSwapCountInRange,
+        baseAssetSwapCount: diag.baseAssetSwapCount,
+        baseAssetFlowSum: diag.baseAssetFlowSum,
+        firstTxTime: diag.firstTxTime,
+        lastTxTime: diag.lastTxTime,
+        reason: diag.reason,
+        status: diag.status,
+      });
+    });
+    console.groupEnd();
+  }, [slotHistoryDiagnostics, asset, isDev, slots]);
+  useEffect(() => {
+    console.debug('[Simulation CTA]', {
+      filledSlotsCount: slots.filter((slot) => slot.node).length,
+      validSlotsCount: slotsWithValidData.length,
+      invalidSlotsReason: missingHistorySlots.map((slot) => slot.id),
+      initialCapital: capital,
+      baseAsset: asset,
+      rawWeights,
+      normalizedWeights: normalizedWeightFractions,
+      canRun,
+      blockingReasons: runBlockingReasons,
+    });
+  }, [
+    slots,
+    slotsWithValidData.length,
+    missingHistorySlots,
+    capital,
+    asset,
+    rawWeights,
+    normalizedWeightFractions,
+    canRun,
+    runBlockingReasons,
+  ]);
 
   const chartData = useMemo(
     () =>
@@ -510,7 +723,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
             const slotValueMap = Object.fromEntries(
               Object.entries(entry.slots).map(([slotId, coins]) => [
                 slotId,
-                coins * entry.price,
+                coins,
               ])
             );
             return {
@@ -524,18 +737,22 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
 
   const leadingContribution = useMemo(() => {
     if (!result || !result.slotSummaries.length) return null;
-    return [...result.slotSummaries].sort(
+    const validSummaries = result.slotSummaries.filter(
+      (summary) => summary.status !== 'na'
+    );
+    if (!validSummaries.length) return null;
+    return [...validSummaries].sort(
       (a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)
     )[0];
   }, [result]);
   const runRequirements = [
-    { label: 'Slot 2개 이상', met: hasValidSlots },
+    { label: 'Slot 2개 이상 (유효 데이터)', met: hasValidSlots },
     { label: '비중 합계 100%', met: weightsAligned },
     { label: '초기 코인 100개 이상', met: !capitalError },
   ];
   const metricTooltips = {
     pnl: '총 손익 = 최종 코인 수량 - 초기 코인 수량',
-    roi: 'ROI = (최종 가치 - 초기 가치) ÷ 초기 가치 × 100%',
+    roi: 'ROI = (최종 코인 수량 - 초기 코인 수량) ÷ 초기 코인 수량 × 100%',
     value: 'Final Value = 시뮬레이션 종료 시점의 코인 잔고',
   };
   const timelineLength = result?.timeline.length ?? 0;
@@ -543,11 +760,40 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
     ? result.slotSummaries.reduce((sum, slot) => sum + slot.contribution, 0)
     : 0;
   const contributionDelta =
-    result && timelineLength > 0 ? result.totalPnL - slotContributionTotal : 0;
+    result && timelineLength > 0 ? (result.totalPnL ?? 0) - slotContributionTotal : 0;
   const contributionsAligned =
     Math.abs(contributionDelta) < Math.max(0.01, Math.abs(result?.totalPnL ?? 0) * 0.001);
+  const formatMetricValue = useCallback(
+    (value: number | null | undefined, digits = 2, signed = false) => {
+      if (!result || result.status === 'na' || value === null || !Number.isFinite(value)) {
+        return 'N/A';
+      }
+      const prefix = signed && value > 0 ? '+' : '';
+      return `${prefix}${value.toFixed(digits)}`;
+    },
+    [result]
+  );
 
   useEffect(() => {
+    const needsZeroing = slots.some(
+      (slot) =>
+        slot.node &&
+        slot.weight > 0.05 &&
+        slotHistoryDiagnostics[slot.id]?.status !== 'ok'
+    );
+    if (needsZeroing) {
+      setSlots((prev) => {
+        const adjusted = prev.map((slotState) =>
+          slotState.node &&
+          slotState.weight > 0.05 &&
+          slotHistoryDiagnostics[slotState.id]?.status !== 'ok'
+            ? { ...slotState, weight: 0 }
+            : slotState
+        );
+        return normalizeSlotWeights(adjusted);
+      });
+      return;
+    }
     const activeWeight = slots.reduce(
       (sum, slot) => sum + (slot.node ? slot.weight : 0),
       0
@@ -561,28 +807,47 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
     ) {
       setSlots((prev) => normalizeSlotWeights(prev));
     }
-  }, [slots, setSlots]);
+  }, [slots, setSlots, slotHistoryDiagnostics]);
 
   const handleRunSimulation = useCallback(() => {
-    if (!isRunnable || !currentMarketData) return;
+    if (!canRun || !effectiveMarketData) {
+      if (!canRun) {
+        setSimulationError(runBlockingReasons.join(' / ') || '조건을 충족하세요.');
+      }
+      return;
+    }
     if (capitalError) {
       showCapitalToast(capitalError, 'error');
       return;
     }
     setIsSimulating(true);
+    setSimulationError(null);
     setTimeout(() => {
-      const config: SimulationConfig = {
-        initialCapital: capital,
-        asset,
-        mode: strategyMode,
-        slots,
-      };
-      const simRes = calculateSimulation(config, currentMarketData, asset);
-      setResult(simRes);
-      setHasRun(true);
-      setIsSimulating(false);
+      try {
+        const config: SimulationConfig = {
+          initialCapital: capital,
+          asset,
+          mode: strategyMode,
+          slots,
+        };
+        const simRes = calculateSimulation(config, effectiveMarketData, asset);
+        setResult(simRes);
+        setHasRun(true);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '시뮬레이션을 실행할 수 없습니다.';
+        setResult(null);
+        setHasRun(false);
+        setSimulationError(message);
+        showCapitalToast(message, 'error');
+        console.error('Simulation failed', error);
+      } finally {
+        setIsSimulating(false);
+      }
     }, 800);
-  }, [isRunnable, currentMarketData, capitalError, capital, asset, strategyMode, slots, showCapitalToast]);
+  }, [canRun, effectiveMarketData, capitalError, capital, asset, strategyMode, slots, showCapitalToast, runBlockingReasons]);
 
   useEffect(() => {
     const weightA = slots[0]?.weight ?? 0;
@@ -604,13 +869,13 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
     prevAssetRef.current = asset;
     if (!hasRun) return;
     if (isSimulating) return;
-    if (isRunnable && currentMarketData) {
+    if (canRun && currentMarketData) {
       handleRunSimulation();
     } else {
       setHasRun(false);
       setResult(null);
     }
-  }, [asset, handleRunSimulation, hasRun, isSimulating, isRunnable, currentMarketData]);
+  }, [asset, handleRunSimulation, hasRun, isSimulating, canRun, currentMarketData]);
 
   const handleReset = () => {
     setHasRun(false);
@@ -638,38 +903,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
           Math.max(0, nextH2 - nextH1),
           Math.max(0, nextH1),
         ];
-        const activeIndices = prev
-          .map((slot, idx) => (slot.node ? idx : null))
-          .filter((idx): idx is number => idx !== null);
-        if (activeIndices.length === 0) {
-          return prev.map((slot) =>
-            slot.weight === 0 ? slot : { ...slot, weight: 0 }
-          );
-        }
-
-        const total = activeIndices.reduce(
-          (sum, idx) => sum + weights[idx],
-          0
+        const updated = prev.map((slot, idx) =>
+          slot.node ? { ...slot, weight: weights[idx] } : { ...slot, weight: 0 }
         );
-        const fallback = 100 / activeIndices.length;
-        let changed = false;
-        const nextSlots = prev.map((slot, idx) => {
-          if (!slot.node) {
-            if (slot.weight !== 0) {
-              changed = true;
-              return { ...slot, weight: 0 };
-            }
-            return slot;
-          }
-          const normalized =
-            total === 0 ? fallback : (weights[idx] / total) * 100;
-          if (Math.abs(normalized - slot.weight) > 0.1) {
-            changed = true;
-            return { ...slot, weight: normalized };
-          }
-          return slot;
-        });
-        return changed ? nextSlots : prev;
+        return normalizeSlotWeights(updated);
       });
     },
     [setSlots]
@@ -1032,6 +1269,12 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
                           {infoLine}
                         </div>
+                        {slot.node && slotHistoryDiagnostics[slot.id] && slotHistoryDiagnostics[slot.id]?.status !== 'ok' && (
+                          <div className="text-[9px] font-semibold text-rose-500 dark:text-rose-400 mt-1">
+                            {SLOT_REASON_MESSAGES[slotHistoryDiagnostics[slot.id]?.reason] ||
+                              '선택 기간 데이터 없음'}
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <div
@@ -1070,10 +1313,10 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
       {/* RIGHT PANEL: Chart & Results */}
       <div className="flex-1 bg-transparent p-6 flex flex-col relative">
         {/* Run Overlay */}
-        {(!hasAllocation || !hasRun || isSimulating) && (
+        {(!hasRun || isSimulating) && (
           <div
             className={`absolute inset-0 z-20 bg-white/90 dark:bg-[#090C12]/95 backdrop-blur-xl flex items-center justify-center flex-col rounded-[32px] transition-all duration-500 ${
-              !isRunnable && !isSimulating ? 'opacity-50' : ''
+              !canRun && !isSimulating ? 'opacity-50' : ''
             }`}
           >
             {isSimulating ? (
@@ -1160,25 +1403,25 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   </div>
                 </div>
               </div>
-            ) : hasAllocation ? (
+            ) : (
               <div className="flex flex-col items-center gap-4">
                 <button
                   onClick={handleRunSimulation}
-                  disabled={!isRunnable}
+                  disabled={!canRun || isSimulating}
                   className="group relative transition-all disabled:cursor-not-allowed focus:outline-none"
                 >
                   <div className="flex flex-col items-center justify-center gap-5 transform translate-y-6">
                     <div
                       className={`relative w-24 h-24 transition-all duration-500 ${
-                        !isRunnable ? 'grayscale opacity-50' : ''
+                        !canRun ? 'grayscale opacity-50' : ''
                       }`}
                     >
                       <div 
                         className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 blur-2xl transition-all duration-500"
                         style={{
-                          opacity: isRunnable ? 0.4 : 0.1,
+                          opacity: canRun ? 0.4 : 0.1,
                           transform: 'scale(1.2)',
-                          animation: isRunnable ? 'pulse-glow 3s ease-in-out infinite' : 'none',
+                          animation: canRun ? 'pulse-glow 3s ease-in-out infinite' : 'none',
                         }}
                       />
                       <div 
@@ -1186,7 +1429,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         style={{
                           background: 'conic-gradient(from 0deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8), rgba(236, 72, 153, 0.8), rgba(99, 102, 241, 0.8))',
                           padding: '2px',
-                          animation: isRunnable ? 'spin 4s linear infinite' : 'none',
+                          animation: canRun ? 'spin 4s linear infinite' : 'none',
                         }}
                       />
                       <div
@@ -1205,8 +1448,8 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     </div>
                     <div className="text-center space-y-2">
                       <div
-                        className={`text-lg font-black tracking-tight transition-all duration-300 ${
-                          isRunnable
+                          className={`text-lg font-black tracking-tight transition-all duration-300 ${
+                          canRun
                             ? 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-[#4ED6E6] group-hover:tracking-wide'
                             : 'text-gray-400 dark:text-white/50'
                         }`}
@@ -1217,9 +1460,9 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                         className="inline-flex items-center gap-1.5 text-[8px] font-bold text-gray-500 dark:text-white/60 uppercase tracking-[0.15em] bg-gray-100/80 dark:bg-white/6 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-[#4ED6E6]/20"
                       >
                         <div
-                          className={`w-1 h-1 rounded-full ${isRunnable ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                          className={`w-1 h-1 rounded-full ${canRun ? 'bg-emerald-500' : 'bg-gray-400'}`}
                           style={{
-                            animation: isRunnable ? 'pulse 2s ease-in-out infinite' : 'none',
+                            animation: canRun ? 'pulse 2s ease-in-out infinite' : 'none',
                           }}
                         />
                         <span>{totalAllocated}% Capital Allocated</span>
@@ -1227,31 +1470,11 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     </div>
                   </div>
                 </button>
-                {!isRunnable && (
-                  <div className="text-center space-y-2 text-[10px] text-gray-500 dark:text-gray-400 max-w-xs">
-                    <p>최소 2개 슬롯에 계정을 배치하고, 비중 합 100%와 초기 코인 100개 이상을 맞추면 실행할 수 있습니다.</p>
-                    <div className="space-y-1">
-                      {runRequirements.map((req) => (
-                        <div key={req.label} className="flex items-center gap-2 justify-center">
-                          <span className={`w-2 h-2 rounded-full ${req.met ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                          <span className={req.met ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}>
-                            {req.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                {simulationError && (
+                  <div className="text-center text-[10px] font-semibold text-rose-500 dark:text-rose-400 max-w-xs">
+                    {simulationError}
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center gap-3 px-8">
-                <PlayCircle className="text-gray-300 dark:text-white/20" size={48} />
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-200">
-                  Assign nodes to Slot A/B/C and distribute capital to enable backtesting.
-                </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-                  상단 상세 패널에서 슬롯을 채우고 비중이 100%가 되면 시뮬레이션이 활성화됩니다. 최소 2개의 슬롯을 갖춰야 합니다.
-                </p>
               </div>
             )}
           </div>
@@ -1259,8 +1482,30 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
 
         {hasAllocation && (
           <>
+            {historyBlocked && (
+              <div className="mb-4 bg-white dark:bg-white/10 border border-rose-200 dark:border-rose-500/40 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-100 shadow-sm z-20">
+                <div className="text-base font-bold text-rose-600 dark:text-rose-400 mb-2">
+                  백테스트를 실행할 수 없습니다
+                </div>
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-2">
+                  선택한 기간에 유효한 거래 히스토리가 있는 계정이 최소 2개 필요합니다.
+                </p>
+                <ul className="text-[11px] text-gray-600 dark:text-gray-400 space-y-1 mb-2">
+                  {missingSlotMessages.map((msg) => (
+                    <li key={msg}>• {msg}</li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  기간을 늘리거나 다른 계정을 선택해 주세요.
+                </p>
+              </div>
+            )}
             {/* Results Header */}
-            <div className="flex gap-6 mb-4 shrink-0 relative z-10">
+            <div
+              className={`flex gap-6 mb-4 shrink-0 relative z-10 ${
+                historyBlocked ? 'opacity-60 blur-[1px]' : ''
+              }`}
+            >
           <div className="flex-1 p-3 bg-white dark:bg-white/7 rounded-2xl shadow-soft dark:shadow-none border border-gray-50 dark:border-[#4ED6E6]/20 backdrop-blur-sm" style={{
             backdropFilter: 'none',
             WebkitBackdropFilter: 'none',
@@ -1268,7 +1513,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
           }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] font-bold text-gray-400 dark:text-white/60 uppercase tracking-widest">
-                Total PnL (Value)
+                Total PnL (Coins)
               </span>
               <button
                 type="button"
@@ -1282,27 +1527,31 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               className={`text-2xl font-light tracking-tighter ${
                 !result
                   ? 'text-gray-900 dark:text-white'
+                  : result.status === 'na'
+                  ? 'text-gray-400 dark:text-white/50'
                   : result.totalPnL >= 0
-                      ? 'text-[#4ED6E6] dark:text-[#4ED6E6]'
-                      : 'text-rose-500 dark:text-rose-400'
-                  }`}
+                  ? 'text-[#4ED6E6] dark:text-[#4ED6E6]'
+                  : 'text-rose-500 dark:text-rose-400'
+              }`}
                   style={{
                     transition: 'color 0.5s ease-out, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    transform: result && result.totalPnL !== 0 ? 'scale(1.05)' : 'scale(1)',
+                    transform:
+                      result && result.status !== 'na' && (result.totalPnL ?? 0) !== 0
+                        ? 'scale(1.05)'
+                        : 'scale(1)',
                   }}
             >
-              {result && result.totalPnL >= 0 ? '+' : ''}
-              {result ? result.totalPnL.toFixed(1) : '0.0'}{' '}
-              <span className="text-xs font-medium text-gray-600 dark:text-white/70">
-                {asset}
-              </span>
+              {formatMetricValue(result?.totalPnL, 2, true)}{' '}
+              {result?.status !== 'na' && (
+                <span className="text-xs font-medium text-gray-600 dark:text-white/70">
+                  {asset}
+                </span>
+              )}
             </div>
-            {result && (
-              <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
-                Coin Δ {result.coinPnL >= 0 ? '+' : ''}
-                {result.coinPnL.toFixed(2)} {asset}
-              </div>
-            )}
+            <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
+              Coin Δ {formatMetricValue(result?.coinPnL, 2, true)}{' '}
+              {result?.status !== 'na' ? asset : ''}
+            </div>
           </div>
           <div className="flex-1 p-3 bg-white dark:bg-white/7 rounded-2xl shadow-soft dark:shadow-none border border-gray-50 dark:border-[#4ED6E6]/20 backdrop-blur-sm" style={{
             backdropFilter: 'none',
@@ -1325,28 +1574,37 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
               className={`text-2xl font-light tracking-tighter ${
                 !result
                   ? 'text-gray-900 dark:text-white'
+                  : result.status === 'na'
+                  ? 'text-gray-400 dark:text-white/50'
                   : (result.roi ?? 0) >= 0
                   ? 'text-emerald-500 dark:text-emerald-300'
                   : 'text-rose-500 dark:text-rose-400'
               }`}
               style={{
                 transition: 'color 0.5s ease-out, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                transform: result && (result.roi ?? 0) !== 0 ? 'scale(1.05)' : 'scale(1)',
+                transform:
+                  result && result.status !== 'na' && (result.roi ?? 0) !== 0
+                    ? 'scale(1.05)'
+                    : 'scale(1)',
               }}
             >
-              {result && (result.roi ?? 0) >= 0 ? '+' : ''}
-              {result ? (result.roi ?? 0).toFixed(2) : '0.00'}%
+              {result?.status === 'na'
+                ? 'N/A'
+                : `${formatMetricValue(result?.roi ?? 0, 2, true)}%`}
             </div>
             {result && (
               <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
-                초기 {capital.toFixed(0)} {asset} → 최종 {result.finalValue.toFixed(0)} {asset}
+                초기 {capital.toFixed(0)} {asset} → 최종{' '}
+                {result?.status === 'na'
+                  ? 'N/A'
+                  : `${formatMetricValue(result?.finalValue, 2)} ${asset}`}
               </div>
             )}
           </div>
           <div className="flex-1 p-3 bg-gray-900 dark:bg-white/8 rounded-2xl shadow-soft dark:shadow-none border border-gray-900 dark:border-[#4ED6E6]/20 text-right backdrop-blur-sm" style={{}}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] font-bold text-gray-500 dark:text-white/60 uppercase tracking-widest">
-                Final Value (Value)
+                Final Value (Coins)
               </span>
               <button
                 type="button"
@@ -1357,27 +1615,40 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   </button>
                 </div>
                 <div 
-                  className="text-2xl font-bold text-white dark:text-aether-dark-text"
-                  style={{
-                    transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    transform: result && result.finalValue > 0 ? 'scale(1.05)' : 'scale(1)',
+              className="text-2xl font-bold text-white dark:text-aether-dark-text"
+              style={{
+                transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transform:
+                  result && result.status !== 'na' && (result.finalValue ?? 0) > 0
+                    ? 'scale(1.05)'
+                    : 'scale(1)',
               }}
             >
-              {result ? result.finalValue.toFixed(0) : '0'}{' '}
-              <span className="text-xs font-medium text-gray-600 dark:text-white/70">
-                {asset}
-              </span>
+              {formatMetricValue(result?.finalValue, 2)}{' '}
+              {result?.status !== 'na' && (
+                <span className="text-xs font-medium text-gray-600 dark:text-white/70">
+                  {asset}
+                </span>
+              )}
             </div>
-            {result && (
-              <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
-                ≈ {result.finalCoins.toFixed(2)} {asset}
-              </div>
-            )}
+            <div className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 mt-1">
+              ≈ {formatMetricValue(result?.finalCoins, 2)}{' '}
+              {result?.status !== 'na' ? asset : ''}
+            </div>
           </div>
         </div>
+        {result?.status === 'na' && result?.reasons?.length && (
+          <div className="text-[10px] font-semibold text-rose-500 dark:text-rose-400 text-center">
+            {result.reasons.join(', ')}
+          </div>
+        )}
 
             {/* Chart Container */}
-            <div className="flex-1 bg-gray-50/50 dark:bg-white/6 rounded-3xl border border-gray-100 dark:border-[#4ED6E6]/20 p-5 relative min-h-0 z-10 backdrop-blur-sm" style={{
+            <div
+              className={`flex-1 bg-gray-50/50 dark:bg-white/6 rounded-3xl border border-gray-100 dark:border-[#4ED6E6]/20 p-5 relative min-h-0 z-10 backdrop-blur-sm ${
+                historyBlocked ? 'opacity-60 blur-[1px]' : ''
+              }`}
+              style={{
               backdropFilter: 'none',
               WebkitBackdropFilter: 'none',
               boxShadow: undefined
@@ -1466,11 +1737,11 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                     }}
                     formatter={(value: number, name: string) => {
                       if (name === 'portfolioValue') {
-                        return [`${value.toFixed(1)} ${asset}`, 'Portfolio Coins'];
+                        return [`${value.toFixed(2)} ${asset}`, 'Portfolio Coins'];
                       } else if (name === 'benchmarkValue') {
-                        return [`${value.toFixed(1)} ${asset}`, 'Benchmark (Hold)'];
+                        return [`${value.toFixed(2)} ${asset}`, 'Benchmark (Hold)'];
                       } else if (SLOT_IDS.includes(name as 'A' | 'B' | 'C')) {
-                        return [`${value.toFixed(1)} ${asset}`, `Slot ${name}`];
+                        return [`${value.toFixed(2)} ${asset}`, `Slot ${name}`];
                       }
                       return [`${value.toFixed(2)}`, name];
                     }}
@@ -1531,7 +1802,7 @@ const SimulationEngine: React.FC<SimulationEngineProps> = ({
                   <span className="font-semibold text-gray-700 dark:text-white/80">
                     Slot {leadingContribution.id}{' '}
                     {leadingContribution.contribution >= 0 ? '+' : ''}
-                    {leadingContribution.contribution.toFixed(1)} {asset}
+                    {leadingContribution.contribution.toFixed(2)} {asset}
                   </span>
                   {leadingContribution.label && (
                     <span className="text-gray-400 dark:text-gray-500">

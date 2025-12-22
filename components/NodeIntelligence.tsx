@@ -199,6 +199,12 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
     if (!selectedNode) return;
     const slot = slots.find((s) => s.id === slotId);
     if (!slot) return;
+    if (isLoadingDetail) {
+      onSlotFeedback?.(
+        `Slot ${slotId}: 계정 데이터를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.`
+      );
+      return;
+    }
 
     const previousNodeName = slot.node?.name;
 
@@ -475,7 +481,6 @@ const NodeIntelligence: React.FC<NodeIntelligenceProps> = ({
               <span className="text-4xl font-black text-gray-900 dark:text-white">{Math.round(selectedNode.size)}</span>
               <span className="text-[11px] text-gray-500 dark:text-gray-400">/100</span>
             </div>
-            <p className="text-[11px] text-gray-500 dark:text-gray-300 mt-1 truncate">{selectedNode.name}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {kpiCards.map((card) => (

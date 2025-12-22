@@ -115,27 +115,55 @@ export interface SimulationConfig {
   }[];
 }
 
+export interface SlotDiagnostics {
+  status: 'ok' | 'na';
+  reason?: string;
+  r?: number | null;
+  rawSwapCount?: number;
+  baseAssetSwapCount?: number;
+  totalBaseLeg?: number;
+}
+
+export interface SimulationDiagnostics {
+  baseAsset: 'ATOM' | 'ATOMONE';
+  initialCapital: number;
+  rawWeights: Record<string, number>;
+  normalizedWeights: Record<string, number>;
+  multipliers: Record<string, number | null>;
+  slotInitials: Record<string, number>;
+  qFinal: number;
+  totalPnL: number;
+  roi: number;
+  finalValue: number;
+}
+
 export interface SimulationResult {
   timeline: {
     date: string;
     portfolioCoins: number;
-    portfolioValue: number;
+    portfolioValue: number; // Coin quantity (legacy name used by chart)
     price: number;
     benchmarkCoins: number;
-    benchmarkValue: number; // Buy-and-hold baseline
+    benchmarkValue: number; // Coin quantity baseline
     slots: Record<string, number>;
   }[];
   finalCoins: number;
-  finalValue: number;
-  roi: number; // Percentage
-  totalPnL: number; // Value-based PnL
-  coinPnL: number; // Coin-based PnL
+  finalValue: number; // Coin quantity
+  roi: number | null; // Percentage
+  totalPnL: number; // Coin-based PnL (spec)
+  coinPnL: number; // Coin-based PnL (legacy alias)
+  status?: 'ok' | 'na';
+  reasons?: string[];
+  slotDiagnostics?: Record<string, SlotDiagnostics>;
   slotSummaries: {
     id: string;
     initialValue: number;
     finalValue: number;
     contribution: number;
+    status?: 'ok' | 'na';
+    reason?: string;
     label?: string;
     address?: string;
   }[];
+  diagnostics?: SimulationDiagnostics;
 }

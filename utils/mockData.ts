@@ -1,4 +1,10 @@
-import { SimulationResult, MarketData, SimulationConfig, NodeData } from '../types';
+import { SimulationResult, MarketData, SimulationConfig, SlotDiagnostics } from '../types';
+import {
+  computeSlotReturn,
+  normalizeWeights,
+  computePortfolio,
+  SlotReturnResult,
+} from './backtest';
 
 /**
  * Calculates the backtest simulation result based on coin quantity (not price).
@@ -9,173 +15,177 @@ import { SimulationResult, MarketData, SimulationConfig, NodeData } from '../typ
  * - Total PnL = Final coins - Initial coins
  * - ROI = (Total PnL / Initial coins) × 100
  */
+const createEmptyResult = (
+  slots: SimulationConfig['slots'],
+  reason: string,
+  diagnostics?: Record<string, SlotDiagnostics>
+): SimulationResult => ({
+  timeline: [],
+  finalCoins: 0,
+  finalValue: 0,
+  roi: null,
+  coinPnL: 0,
+  totalPnL: 0,
+  status: 'na',
+  reasons: [reason],
+  slotDiagnostics: diagnostics,
+  slotSummaries: slots.map((slot) => ({
+    id: slot.id,
+    initialValue: 0,
+    finalValue: 0,
+    contribution: 0,
+    status: 'na',
+    reason,
+    label: slot.node?.name,
+    address: slot.node?.address,
+  })),
+});
+
+const normalizeRange = (history?: MarketData['history']) => {
+  if (!history || !history.length) {
+    return { start: null, endExclusive: null };
+  }
+  const first = history[0]?.date;
+  const last = history[history.length - 1]?.date;
+  if (!first || !last) {
+    return { start: null, endExclusive: null };
+  }
+  const start = first.slice(0, 10);
+  const endDate = new Date(last);
+  if (Number.isNaN(endDate.getTime())) {
+    return { start, endExclusive: null };
+  }
+  endDate.setUTCDate(endDate.getUTCDate() + 1);
+  return { start, endExclusive: endDate.toISOString().slice(0, 10) };
+};
+
 export const calculateSimulation = (
   config: SimulationConfig,
   marketData: MarketData,
   baseDenom: 'ATOM' | 'ATOMONE'
 ): SimulationResult => {
-  const { initialCapital, mode, slots } = config;
-  
-  // Validate inputs
-  if (slots.every(s => !s.node)) {
-    return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0, slotSummaries: [] };
-  }
+  const { initialCapital, slots } = config;
+  const slotStatusMap: Record<string, SlotReturnResult> = {};
+  try {
+    const range = normalizeRange(marketData.history);
 
-  // Use marketData.history as the base timeline (it has the date range from filters)
-  if (!marketData.history || marketData.history.length === 0) {
-    return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0, slotSummaries: [] };
-  }
+    slots.forEach((slot) => {
+      slotStatusMap[slot.id] = computeSlotReturn(slot, baseDenom, range);
+    });
 
-  const timelineLength = marketData.history.length;
-  const dates = marketData.history.map(h => h.date);
-  const firstPrice = marketData.history[0]?.price ?? 1;
-  const lastPrice = marketData.history[timelineLength - 1]?.price ?? firstPrice;
+    const normalizedWeights = normalizeWeights(slots, slotStatusMap);
+    const portfolio = computePortfolio(
+      initialCapital,
+      normalizedWeights,
+      slotStatusMap
+    );
 
-  // 1. Simulate each slot independently
-  // Each slot gets initial coins = C0 × weight
-  const slotTimelines: { [key: string]: number[] } = {};
-  
-  const slotInitials: Record<string, number> = {};
+    const slotDiagnostics: Record<string, SlotDiagnostics> = {};
+    Object.values(slotStatusMap).forEach((status) => {
+      slotDiagnostics[status.id] = {
+        status: status.status,
+        reason: status.reason,
+        r: status.r,
+        rawSwapCount: status.rawSwapCount,
+        baseAssetSwapCount: status.baseAssetSwapCount,
+        totalBaseLeg: status.totalBaseLeg,
+      };
+    });
 
-  slots.forEach(slot => {
-    if (slot.node) {
-      const slotInitialCoins = initialCapital * (slot.weight / 100);
-      slotInitials[slot.id] = slotInitialCoins;
-      
-      // Get node's history and align it with marketData.history dates
-      const nodeHistory = slot.node.history || [];
-      const nodeHistoryMap = new Map(nodeHistory.map(h => [h.date, h]));
-      
-      // Create aligned timeline based on marketData dates
-      const alignedTimeline: number[] = [];
-      let currentCoins = slotInitialCoins;
-      
-      if (mode === 'LONG_ONLY') {
-        // Just hold coins
-        alignedTimeline.push(...new Array(timelineLength).fill(slotInitialCoins));
-      } else {
-        // COPY_TRADING: follow the node's trading pattern
-        for (let i = 0; i < timelineLength; i++) {
-          const date = dates[i];
-          const nodeEntry = nodeHistoryMap.get(date);
-          
-          if (nodeEntry) {
-            // Apply netFlow to change coin quantity
-            const netFlowStrength = Math.max(-0.4, Math.min(0.4, nodeEntry.netFlow ?? 0));
-            const coinChange = currentCoins * netFlowStrength;
-            currentCoins += coinChange;
-            currentCoins = Math.max(0, currentCoins);
-          }
-          
-          alignedTimeline.push(currentCoins);
-        }
-      }
-      
-      slotTimelines[slot.id] = alignedTimeline;
-    } else {
-      const slotInitialCoins = initialCapital * (slot.weight / 100);
-      slotInitials[slot.id] = slotInitialCoins;
-      slotTimelines[slot.id] = new Array(timelineLength).fill(slotInitialCoins);
+    const slotSummaries = slots.map((slot) => {
+      const diag = slotStatusMap[slot.id];
+      const weight = normalizedWeights[slot.id] || 0;
+      const initialValue = initialCapital * weight;
+      const finalValue =
+        diag?.status === 'ok' && diag?.r !== null
+          ? initialValue * (diag.r ?? 0)
+          : initialValue;
+      return {
+        id: slot.id,
+        initialValue,
+        finalValue,
+        contribution: finalValue - initialValue,
+        status: diag?.status,
+        reason: diag?.reason,
+        label: slot.node?.name,
+        address: slot.node?.address,
+      };
+    });
+
+    const history = marketData.history || [];
+    const timeline =
+      history.length > 0
+        ? history.map((entry, idx) => {
+            const progress =
+              history.length === 1 ? 1 : idx / (history.length - 1);
+            const targetCoins =
+              initialCapital +
+              (portfolio.qFinal - initialCapital) * progress;
+            const slotValues = slots.reduce<Record<string, number>>(
+              (acc, slot) => {
+                const weight = normalizedWeights[slot.id] || 0;
+                acc[slot.id] = targetCoins * weight;
+                return acc;
+              },
+              {}
+            );
+            return {
+              date: entry.date || `${idx}`,
+              portfolioCoins: targetCoins,
+              portfolioValue: targetCoins,
+              price: entry.price ?? 1,
+              benchmarkCoins: initialCapital,
+              benchmarkValue: initialCapital,
+              slots: slotValues,
+            };
+          })
+        : [];
+
+    console.groupCollapsed(`[Simulation][${baseDenom}] Diagnostics`);
+    console.log('baseAsset / C0', { baseAsset: baseDenom, C0: initialCapital });
+    console.log('Slot status', slotDiagnostics);
+    console.log('Normalized weights', normalizedWeights);
+    console.log('Portfolio', portfolio);
+    console.groupEnd();
+
+    if (portfolio.status === 'na') {
+      return {
+        ...createEmptyResult(slots, portfolio.reasons.join(', '), slotDiagnostics),
+        slotSummaries,
+        slotDiagnostics,
+      };
     }
-  });
 
-  // 2. Combine results into a final portfolio timeline
-  // Qfinal = QA0 × rA + QB0 × rB + QC0 × rC (sum of all slot coin quantities)
-  const portfolioTimeline: {
-    date: string;
-    portfolioValue: number;
-    benchmarkValue: number;
-    slots: Record<string, number>;
-  }[] = [];
-  
-  // Benchmark: simple buy-and-hold (coins remain unchanged - same as initial)
-  const benchmarkCoins = initialCapital;
-
-  for (let i = 0; i < timelineLength; i++) {
-    const price = marketData.history[i]?.price ?? firstPrice;
-    let dailyPortfolioCoins = 0;
-    const slotSnapshot: Record<string, number> = {};
-    
-    // Sum coin quantities from all slots
-    slots.forEach(slot => {
-      if (slotTimelines[slot.id] && slotTimelines[slot.id][i] !== undefined) {
-        const slotValue = slotTimelines[slot.id][i];
-        dailyPortfolioCoins += slotValue;
-        slotSnapshot[slot.id] = slotValue;
-      } else {
-        slotSnapshot[slot.id] = slotInitials[slot.id] || 0;
-      }
-    });
-
-    // Benchmark tracks hold value using market price
-    portfolioTimeline.push({
-      date: dates[i] || `${i}`,
-    portfolioCoins: dailyPortfolioCoins,
-    portfolioValue: dailyPortfolioCoins * price,
-    price,
-    benchmarkCoins: benchmarkCoins,
-      benchmarkValue: benchmarkCoins * price,
-      slots: slotSnapshot
-    });
-  }
-  
-  if (portfolioTimeline.length === 0) {
-     return { timeline: [], finalValue: 0, roi: 0, totalPnL: 0, slotSummaries: [] };
-  }
-
-  // 3. Calculate final metrics (all in coin quantity)
-  const initialValue = initialCapital * firstPrice;
-  const finalCoins = portfolioTimeline[portfolioTimeline.length - 1].portfolioCoins;
-  const finalValue = portfolioTimeline[portfolioTimeline.length - 1].portfolioValue;
-  const totalPnL = finalValue - initialValue;
-  const coinPnL = finalCoins - initialCapital;
-  const roi = initialValue === 0 ? 0 : (totalPnL / initialValue) * 100;
-
-  const slotSummaries = slots.map(slot => {
-    const slotTimeline = slotTimelines[slot.id] || [];
-    const finalValue =
-      slotTimeline.length > 0
-        ? slotTimeline[slotTimeline.length - 1] * lastPrice
-        : (slotInitials[slot.id] || 0) * lastPrice;
-    const initialValueSlot = (slotInitials[slot.id] || 0) * firstPrice;
     return {
-      id: slot.id,
-      initialValue: initialValueSlot,
-      finalValue,
-      contribution: finalValue - initialValueSlot,
-      label: slot.node?.name,
-      address: slot.node?.address
+      timeline,
+      finalCoins: portfolio.qFinal,
+      finalValue: portfolio.finalValue,
+      roi: portfolio.roi,
+      coinPnL: portfolio.pnl,
+      totalPnL: portfolio.pnl,
+      slotSummaries,
+      status: portfolio.status,
+      reasons: portfolio.reasons,
+      slotDiagnostics,
     };
-  });
-
-  if (portfolioTimeline.length > 0) {
-    const firstEntry = portfolioTimeline[0];
-    const lastEntry = portfolioTimeline[portfolioTimeline.length - 1];
-    console.debug(`[Simulation][${baseDenom}] Portfolio timeline`, {
-      first: {
-        date: firstEntry.date,
-        coins: firstEntry.portfolioCoins,
-        value: firstEntry.portfolioValue,
-        price: firstEntry.price,
-        slots: firstEntry.slots,
-      },
-      last: {
-        date: lastEntry.date,
-        coins: lastEntry.portfolioCoins,
-        value: lastEntry.portfolioValue,
-        price: lastEntry.price,
-        slots: lastEntry.slots,
-      },
-    });
+  } catch (error) {
+    console.error('[calculateSimulation] failed', error);
+    return createEmptyResult(
+      config.slots,
+      'SIMULATION_ERROR',
+      Object.fromEntries(
+        Object.entries(slotStatusMap).map(([id, status]) => [
+          id,
+          {
+            status: status.status,
+            reason: status.reason,
+            r: status.r,
+            rawSwapCount: status.rawSwapCount,
+            baseAssetSwapCount: status.baseAssetSwapCount,
+            totalBaseLeg: status.totalBaseLeg,
+          },
+        ])
+      )
+    );
   }
-
-  return {
-    timeline: portfolioTimeline,
-    finalCoins,
-    finalValue,
-    roi,
-    coinPnL,
-    totalPnL,
-    slotSummaries
-  };
 };

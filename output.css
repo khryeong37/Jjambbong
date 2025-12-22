@@ -1937,6 +1937,11 @@ input[type="date"].date-input-no-icon {
   border-color: rgb(255 228 230 / var(--tw-border-opacity, 1));
 }
 
+.border-rose-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 205 211 / var(--tw-border-opacity, 1));
+}
+
 .border-sky-100 {
   --tw-border-opacity: 1;
   border-color: rgb(224 242 254 / var(--tw-border-opacity, 1));
@@ -2323,6 +2328,11 @@ input[type="date"].date-input-no-icon {
   font-size: 9px;
 }
 
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
 .text-lg {
   font-size: 1.125rem;
   line-height: 1.75rem;
@@ -2587,6 +2597,11 @@ input[type="date"].date-input-no-icon {
 
 .blur-2xl {
   --tw-blur: blur(40px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.blur-\[1px\] {
+  --tw-blur: blur(1px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
@@ -3214,6 +3229,10 @@ input[type="date"].date-input-no-icon {
     border-color: rgb(251 113 133 / 0.4);
   }
 
+  .dark\:border-rose-500\/40 {
+    border-color: rgb(244 63 94 / 0.4);
+  }
+
   .dark\:border-sky-500\/30 {
     border-color: rgb(14 165 233 / 0.3);
   }
@@ -3431,10 +3450,6 @@ input[type="date"].date-input-no-icon {
   .dark\:text-white {
     --tw-text-opacity: 1;
     color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-  }
-
-  .dark\:text-white\/20 {
-    color: rgb(255 255 255 / 0.2);
   }
 
   .dark\:text-white\/40 {
